@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
+import 'features/cart_and_checkout/screens/cart_screen.dart';
+import 'features/home/screens/home_screen.dart';
+import 'features/orders/screens/recent_orders_screen.dart';
 import 'shared/providers/navigation_provider.dart';
 
 class MainWrapper extends StatelessWidget {
   const MainWrapper({super.key});
 
-  final List<Widget> _pages = const [
-    Center(child: Text('سبد خرید', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
-    Center(child: Text('خانه (لیست غذاها)', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
-    Center(child: Text('سفارشات اخیر', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
+  static const List<Widget> _pages = [
+    CartScreen(),
+    HomeScreen(),
+    RecentOrdersScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // ✅ selectedIndex از Provider می‌آید — باگ قبلی اینجا بود
     final selectedIndex = context.watch<NavigationProvider>().selectedIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        // ✅ IndexedStack — صفحه‌ها rebuild نمی‌شن، state حفظ می‌شه
         body: IndexedStack(
           index: selectedIndex,
           children: _pages,
@@ -32,7 +33,7 @@ class MainWrapper extends StatelessWidget {
   }
 }
 
-// ── NavBar به ویجت مجزا منتقل شد — تمیزتر و قابل‌استفاده مجدد ──
+// ── NavBar ──
 class _BottomNav extends StatelessWidget {
   const _BottomNav({required this.isDark});
   final bool isDark;
@@ -58,9 +59,9 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _NavItem(index: 0, icon: Icons.shopping_cart_rounded,  label: 'سبد خرید', selectedIndex: selectedIndex, isDark: isDark),
-              _NavItem(index: 1, icon: Icons.home_rounded,           label: 'خانه',     selectedIndex: selectedIndex, isDark: isDark),
-              _NavItem(index: 2, icon: Icons.receipt_long_rounded,   label: 'سفارشات',  selectedIndex: selectedIndex, isDark: isDark),
+              _NavItem(index: 0, icon: Icons.shopping_cart_rounded, label: 'سبد خرید', selectedIndex: selectedIndex, isDark: isDark),
+              _NavItem(index: 1, icon: Icons.home_rounded,          label: 'خانه',     selectedIndex: selectedIndex, isDark: isDark),
+              _NavItem(index: 2, icon: Icons.receipt_long_rounded,  label: 'سفارشات',  selectedIndex: selectedIndex, isDark: isDark),
             ],
           ),
         ),
