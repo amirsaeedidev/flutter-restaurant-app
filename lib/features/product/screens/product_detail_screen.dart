@@ -494,11 +494,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
     // اگه قبلاً در سبد بوده، تعداد و توضیحات قبلی رو بیار
     final cart = context.read<CartProvider>();
     _quantity = cart.quantityOf(widget.product.id).clamp(1, 99);
-    final existingNote = cart.items
-        .where((e) => e.product.id == widget.product.id)
-        .map((e) => e.note)
-        .firstOrNull ?? '';
-    _noteController.text = existingNote;
+    _noteController.text = cart.noteOf(widget.product.id);
   }
 
   @override

@@ -19,7 +19,11 @@ class CartProvider extends ChangeNotifier {
     return index == -1 ? 0 : _items[index].quantity;
   }
 
-  // افزودن به سبد یا افزایش تعداد
+  String noteOf(String productId) {
+    final index = _items.indexWhere((e) => e.product.id == productId);
+    return index == -1 ? '' : _items[index].note;
+  }
+
   void addItem(ProductModel product, {int quantity = 1, String note = ''}) {
     final index = _items.indexWhere((e) => e.product.id == product.id);
     if (index == -1) {
@@ -56,16 +60,16 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearCart() {
-    _items.clear();
-    notifyListeners();
-  }
-
   void updateNote(String productId, String note) {
     final index = _items.indexWhere((e) => e.product.id == productId);
     if (index != -1) {
       _items[index].note = note;
       notifyListeners();
     }
+  }
+
+  void clearCart() {
+    _items.clear();
+    notifyListeners();
   }
 }
