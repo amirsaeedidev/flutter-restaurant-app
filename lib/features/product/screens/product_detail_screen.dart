@@ -67,10 +67,10 @@ class ProductDetailScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: AppColors.secondary.withOpacity(0.15),
+                              color: AppColors.secondary.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: AppColors.secondary.withOpacity(0.4)),
+                                  color: AppColors.secondary.withValues(alpha: 0.4)),
                             ),
                             child: const Text('🔥 پرطرفدار',
                                 style: TextStyle(
@@ -96,7 +96,7 @@ class ProductDetailScreen extends StatelessWidget {
 
                     // خط جدا
                     Divider(
-                        color: isDark ? Colors.white12 : Colors.black.withOpacity(0.07)),
+                        color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07)),
 
                     const SizedBox(height: 16),
 
@@ -150,8 +150,8 @@ class _ProductImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: isDark
-          ? Colors.white.withOpacity(0.04)
-          : AppColors.primary.withOpacity(0.06),
+          ? Colors.white.withValues(alpha: 0.04)
+          : AppColors.primary.withValues(alpha: 0.06),
       child: Center(
         child: Text(
           _emojiForCategory(product.categoryId),
@@ -187,7 +187,7 @@ class _BackButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
           ),
           child: Icon(Icons.arrow_forward_rounded,
               color: isDark ? AppColors.darkText : AppColors.lightText, size: 20),
@@ -216,7 +216,7 @@ class _CartBadgeButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
               ),
               child: const Icon(Icons.shopping_cart_rounded,
                   color: AppColors.primary, size: 20),
@@ -362,7 +362,7 @@ class _ReviewCard extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +417,7 @@ class _BottomButtons extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.07),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.07),
               blurRadius: 16,
               offset: const Offset(0, -4)),
         ],
@@ -587,8 +587,8 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                         : AppColors.lightTextSecondary),
                 filled: true,
                 fillColor: isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.04),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -698,7 +698,7 @@ class _QBtn extends StatelessWidget {
         decoration: BoxDecoration(
           color: isPrimary
               ? AppColors.primary
-              : (isDark ? Colors.white12 : Colors.black.withOpacity(0.07)),
+              : (isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07)),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon,

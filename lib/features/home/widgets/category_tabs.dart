@@ -79,13 +79,13 @@ class _CategoryChip extends StatelessWidget {
                 ? AppColors.primary
                 : (isDark
                     ? Colors.white12
-                    : Colors.black.withOpacity(0.08)),
+                    : Colors.black.withValues(alpha: 0.08)),
             width: 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
+                    color: AppColors.primary.withValues(alpha: 0.35),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   )

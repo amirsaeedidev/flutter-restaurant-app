@@ -113,7 +113,7 @@ class _PromoBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppColors.primary,
-            AppColors.primary.withRed(200).withOpacity(0.85),
+            AppColors.primary.withRed(200).withValues(alpha: 0.85),
           ],
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
@@ -176,7 +176,7 @@ class _PromoCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white38),
       ),
@@ -213,7 +213,7 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
           if (overlapsContent)
             Divider(
               height: 1,
-              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
             ),
           const Expanded(
             child: Align(

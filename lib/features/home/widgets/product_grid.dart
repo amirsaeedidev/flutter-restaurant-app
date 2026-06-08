@@ -72,7 +72,7 @@ class _ProductCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       elevation: isDark ? 0 : 2,
-      shadowColor: Colors.black.withOpacity(0.08),
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       child: InkWell(
         onTap: () {
           // TODO: navigate to product detail
@@ -89,8 +89,8 @@ class _ProductCard extends StatelessWidget {
                   // Placeholder تصویر (چون imageUrl خالیه)
                   Container(
                     color: isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : AppColors.primary.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : AppColors.primary.withValues(alpha: 0.06),
                     child: const Center(
                       child: Text('🍽️', style: TextStyle(fontSize: 52)),
                     ),
