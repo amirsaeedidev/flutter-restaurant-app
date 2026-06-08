@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
+import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/cart_and_checkout/screens/cart_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/orders/screens/recent_orders_screen.dart';
@@ -89,6 +90,10 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedIndex == index;
+    // badge فقط برای سبد خرید (index 0)
+    final cartCount = index == 0
+        ? context.watch<CartProvider>().itemCount
+        : 0;
 
     return GestureDetector(
       onTap: () => context.read<NavigationProvider>().setIndex(index),
@@ -103,12 +108,43 @@ class _NavItem extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-              size: 26,
+            // آیکون + badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
+                  size: 26,
+                ),
+                if (cartCount > 0 && !isSelected)
+                  Positioned(
+                    top: -4,
+                    left: -4,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          cartCount > 9 ? '9+' : '$cartCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             AnimatedSize(
               duration: const Duration(milliseconds: 350),
