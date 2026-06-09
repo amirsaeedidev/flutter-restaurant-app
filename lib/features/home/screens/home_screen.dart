@@ -94,7 +94,6 @@ class _HomeView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ),
             ],
           ),
 

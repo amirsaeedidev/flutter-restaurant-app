@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/product_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../cart_and_checkout/providers/cart_provider.dart';
+import '../../product/screens/product_detail_screen.dart';
 import '../providers/home_provider.dart';
 
 class ProductGrid extends StatelessWidget {
@@ -51,6 +53,15 @@ class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
   final ProductModel product;
 
+  String _emojiForCategory(String id) {
+    switch (id) {
+      case '1': return '🍢';
+      case '2': return '🥗';
+      case '3': return '🥤';
+      default:  return '🍽️';
+    }
+  }
+
   // قالب‌بندی قیمت به تومان با جداکننده هزارگان
   String _formatPrice(int price) {
     final str = price.toString();
@@ -74,9 +85,12 @@ class _ProductCard extends StatelessWidget {
       elevation: isDark ? 0 : 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
       child: InkWell(
-        onTap: () {
-          // TODO: navigate to product detail
-        },
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(product: product),
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,8 +105,11 @@ class _ProductCard extends StatelessWidget {
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.04)
                         : AppColors.primary.withValues(alpha: 0.06),
-                    child: const Center(
-                      child: Text('🍽️', style: TextStyle(fontSize: 52)),
+                    child: Center(
+                      child: Text(
+                        _emojiForCategory(product.categoryId),
+                        style: const TextStyle(fontSize: 52),
+                      ),
                     ),
                   ),
                   // بج «پرطرفدار»
@@ -206,29 +223,29 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cart = context.watch<CartProvider>();
+    final inCart = cart.isInCart(product.id);
+
     return GestureDetector(
-      onTap: () {
-        // TODO: اضافه به سبد خرید (CartProvider — مرحله بعدی)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${product.name} به سبد اضافه شد ✅'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.primary,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-          ),
-        );
-      },
-      child: Container(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductDetailScreen(product: product),
+        ),
+      ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: inCart ? Colors.green : AppColors.primary,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+        child: Icon(
+          inCart ? Icons.check_rounded : Icons.add_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
       ),
     );
   }

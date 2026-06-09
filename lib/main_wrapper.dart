@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/cart_and_checkout/screens/cart_screen.dart';
+
 import 'features/home/screens/home_screen.dart';
 import 'features/orders/screens/recent_orders_screen.dart';
 import 'features/profile/providers/profile_provider.dart';
