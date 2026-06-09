@@ -5,6 +5,8 @@ import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/cart_and_checkout/screens/cart_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/orders/screens/recent_orders_screen.dart';
+import 'features/profile/providers/profile_provider.dart';
+import 'features/profile/widgets/custom_drawer.dart';
 import 'shared/providers/navigation_provider.dart';
 
 class MainWrapper extends StatelessWidget {
@@ -21,14 +23,18 @@ class MainWrapper extends StatelessWidget {
     final selectedIndex = context.watch<NavigationProvider>().selectedIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        body: IndexedStack(
-          index: selectedIndex,
-          children: _pages,
+    return ChangeNotifierProvider(
+      create: (_) => ProfileProvider(),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          drawer: const CustomDrawer(),
+          body: IndexedStack(
+            index: selectedIndex,
+            children: _pages,
+          ),
+          bottomNavigationBar: _BottomNav(isDark: isDark),
         ),
-        bottomNavigationBar: _BottomNav(isDark: isDark),
       ),
     );
   }
@@ -56,13 +62,29 @@ class _BottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16.0, vertical: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _NavItem(index: 0, icon: Icons.shopping_cart_rounded, label: 'سبد خرید', selectedIndex: selectedIndex, isDark: isDark),
-              _NavItem(index: 1, icon: Icons.home_rounded,          label: 'خانه',     selectedIndex: selectedIndex, isDark: isDark),
-              _NavItem(index: 2, icon: Icons.receipt_long_rounded,  label: 'سفارشات',  selectedIndex: selectedIndex, isDark: isDark),
+              _NavItem(
+                  index: 0,
+                  icon: Icons.shopping_cart_rounded,
+                  label: 'سبد خرید',
+                  selectedIndex: selectedIndex,
+                  isDark: isDark),
+              _NavItem(
+                  index: 1,
+                  icon: Icons.home_rounded,
+                  label: 'خانه',
+                  selectedIndex: selectedIndex,
+                  isDark: isDark),
+              _NavItem(
+                  index: 2,
+                  icon: Icons.receipt_long_rounded,
+                  label: 'سفارشات',
+                  selectedIndex: selectedIndex,
+                  isDark: isDark),
             ],
           ),
         ),
@@ -91,16 +113,16 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = selectedIndex == index;
     // badge فقط برای سبد خرید (index 0)
-    final cartCount = index == 0
-        ? context.watch<CartProvider>().itemCount
-        : 0;
+    final cartCount =
+        index == 0 ? context.watch<CartProvider>().itemCount : 0;
 
     return GestureDetector(
       onTap: () => context.read<NavigationProvider>().setIndex(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),

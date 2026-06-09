@@ -69,10 +69,31 @@ class _HomeView extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.search_rounded,
-                  color:
-                      isDark ? AppColors.darkText : AppColors.lightText,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
                 ),
                 onPressed: () {},
+              ),
+              // دکمه پروفایل / Drawer
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GestureDetector(
+                  onTap: () => Scaffold.of(context).openDrawer(),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Text('👤', style: TextStyle(fontSize: 18)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               ),
             ],
           ),
