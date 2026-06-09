@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/cart_and_checkout/screens/cart_screen.dart';
-
 import 'features/home/screens/home_screen.dart';
 import 'features/orders/screens/recent_orders_screen.dart';
 import 'features/profile/providers/profile_provider.dart';
@@ -13,10 +12,10 @@ import 'shared/providers/navigation_provider.dart';
 class MainWrapper extends StatelessWidget {
   const MainWrapper({super.key});
 
-  static const List<Widget> _pages = [
-    CartScreen(),
-    HomeScreen(),
-    RecentOrdersScreen(),
+  static final List<Widget> _pages = [
+    const CartScreen(),
+    const HomeScreen(),
+    const RecentOrdersScreen(),
   ];
 
   @override
@@ -24,17 +23,21 @@ class MainWrapper extends StatelessWidget {
     final selectedIndex = context.watch<NavigationProvider>().selectedIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ProfileProvider فقط برای Drawer لازمه — اینجا provide میشه
     return ChangeNotifierProvider(
       create: (_) => ProfileProvider(),
       child: Directionality(
         textDirection: TextDirection.rtl,
-        child: Scaffold(
-          drawer: const CustomDrawer(),
-          body: IndexedStack(
-            index: selectedIndex,
-            children: _pages,
+        child: Builder(
+          // Builder یه context جدید میده که ProfileProvider رو داره
+          builder: (ctx) => Scaffold(
+            drawer: const CustomDrawer(),
+            body: IndexedStack(
+              index: selectedIndex,
+              children: _pages,
+            ),
+            bottomNavigationBar: _BottomNav(isDark: isDark),
           ),
-          bottomNavigationBar: _BottomNav(isDark: isDark),
         ),
       ),
     );
@@ -114,6 +117,7 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = selectedIndex == index;
     // badge فقط برای سبد خرید (index 0)
+    // CartProvider از main.dart provide شده — همیشه در دسترسه
     final cartCount =
         index == 0 ? context.watch<CartProvider>().itemCount : 0;
 

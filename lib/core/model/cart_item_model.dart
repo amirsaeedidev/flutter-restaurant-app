@@ -1,9 +1,9 @@
-import '../../../core/model/product_model.dart';
+import 'product_model.dart';
 
 class CartItemModel {
   final ProductModel product;
   int quantity;
-  String note; // توضیحات سفارش (مثلاً: بدون نمک)
+  String note;
 
   CartItemModel({
     required this.product,

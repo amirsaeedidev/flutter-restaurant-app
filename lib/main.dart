@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
+import 'features/cart_and_checkout/providers/cart_provider.dart';
+import 'features/orders/providers/orders_provider.dart';
 import 'main_wrapper.dart';
 import 'shared/providers/navigation_provider.dart';
 
 void main() {
   runApp(
-    // راه‌اندازی MultiProvider برای مدیریت تمام وضعیت‌های برنامه
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        // پروایدرهای سبد خرید و ... بعداً اینجا اضافه میشن
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => OrdersProvider()),
       ],
       child: const MyApp(),
     ),
@@ -23,7 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Restaurant App',
+      title: 'رستوران',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
