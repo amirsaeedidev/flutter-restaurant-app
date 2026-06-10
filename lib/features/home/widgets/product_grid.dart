@@ -55,10 +55,14 @@ class _ProductCard extends StatelessWidget {
 
   String _emojiForCategory(String id) {
     switch (id) {
-      case '1': return '🍢';
-      case '2': return '🥗';
-      case '3': return '🥤';
-      default:  return '🍽️';
+      case '1':
+        return '🍢';
+      case '2':
+        return '🥗';
+      case '3':
+        return '🥤';
+      default:
+        return '🍽️';
     }
   }
 
@@ -101,16 +105,24 @@ class _ProductCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   // Placeholder تصویر (چون imageUrl خالیه)
-                  Container(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : AppColors.primary.withValues(alpha: 0.06),
-                    child: Center(
-                      child: Text(
-                        _emojiForCategory(product.categoryId),
-                        style: const TextStyle(fontSize: 52),
-                      ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
                     ),
+                    child: product.imageUrl.startsWith('http')
+                        ? Image.network(
+                            product.imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        : Image.asset(
+                            product.imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
                   ),
                   // بج «پرطرفدار»
                   if (product.isPopular)
@@ -119,7 +131,9 @@ class _ProductCard extends StatelessWidget {
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.secondary,
                           borderRadius: BorderRadius.circular(10),
@@ -165,15 +179,19 @@ class _ProductCard extends StatelessWidget {
                     // ستاره + تعداد نظر
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded,
-                            color: AppColors.secondary, size: 15),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: AppColors.secondary,
+                          size: 15,
+                        ),
                         const SizedBox(width: 3),
                         Text(
                           product.rating.toStringAsFixed(1),
                           style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.secondary),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondary,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         Text(

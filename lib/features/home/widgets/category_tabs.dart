@@ -24,8 +24,8 @@ class CategoryTabs extends StatelessWidget {
           // اولین آیتم (در RTL آخرین سمت راست) = «همه»
           if (index == provider.categories.length) {
             return _CategoryChip(
-              label: 'همه',
-              emoji: '🍽️',
+               label: 'همه',
+  imagePath: 'assets/images/all.png',
               isSelected: provider.selectedCategoryId == null,
               onTap: () => provider.selectCategory(null),
               isDark: isDark,
@@ -35,7 +35,7 @@ class CategoryTabs extends StatelessWidget {
           final category = provider.categories[index];
           return _CategoryChip(
             label: category.name,
-            emoji: category.icon,
+            imagePath: category.imageUrl,
             isSelected: provider.selectedCategoryId == category.id,
             onTap: () => provider.selectCategory(category.id),
             isDark: isDark,
@@ -49,14 +49,14 @@ class CategoryTabs extends StatelessWidget {
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({
     required this.label,
-    required this.emoji,
+    required this.imagePath,
     required this.isSelected,
     required this.onTap,
     required this.isDark,
   });
 
   final String label;
-  final String emoji;
+  final String imagePath;
   final bool isSelected;
   final VoidCallback onTap;
   final bool isDark;
@@ -95,7 +95,12 @@ class _CategoryChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
+            Image.asset(
+  imagePath,
+  width: 20,
+  height: 20,
+  fit: BoxFit.contain,
+),
             const SizedBox(width: 6),
             Text(
               label,
