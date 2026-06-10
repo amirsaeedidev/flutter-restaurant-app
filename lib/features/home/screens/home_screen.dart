@@ -121,7 +121,7 @@ class _HomeViewState extends State<_HomeView> {
                           ),
                           child: const Center(
                             child:
-                                Text('👤', style: TextStyle(fontSize: 18)),
+                                Icon(Icons.menu_rounded,),
                           ),
                         ),
                       ),

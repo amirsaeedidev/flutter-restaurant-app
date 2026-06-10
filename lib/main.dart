@@ -5,7 +5,7 @@ import 'core/theme/theme_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/orders/providers/orders_provider.dart';
-import 'features/auth/screens/splash_screen.dart';
+import 'features/auth/screens/onboarding.dart';
 import 'shared/providers/navigation_provider.dart';
 
 void main() {
