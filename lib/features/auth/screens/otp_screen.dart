@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../main_wrapper.dart';
@@ -14,13 +15,11 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  // 4 فیلد جداگانه برای هر رقم
   final List<TextEditingController> _controllers =
       List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes =
       List.generate(4, (_) => FocusNode());
 
-  // تایمر ۲ دقیقه
   static const _timerSeconds = 120;
   int _remaining = _timerSeconds;
   Timer? _timer;
@@ -30,7 +29,6 @@ class _OtpScreenState extends State<OtpScreen> {
   void initState() {
     super.initState();
     _startTimer();
-    // فوکوس روی اولین فیلد
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => _focusNodes[0].requestFocus());
   }
@@ -55,8 +53,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return '$m:$s';
   }
 
-  String get _otpCode =>
-      _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.map((c) => c.text).join();
 
   @override
   void dispose() {
@@ -66,33 +63,22 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  // وقتی یه رقم وارد شد، فوکوس بره رقم بعدی
   void _onChanged(String value, int index) {
     if (value.length == 1 && index < 3) {
       _focusNodes[index + 1].requestFocus();
-    }
-    // اگه همه رقم‌ها پر شد، submit کن
-    if (_otpCode.length == 4) _verify();
-  }
-
-  // وقتی backspace زده شد
-  void _onKeyEvent(KeyEvent event, int index) {
-    if (event is KeyDownEvent &&
-        event.logicalKey.keyLabel == 'Backspace' &&
-        _controllers[index].text.isEmpty &&
-        index > 0) {
+    } else if (value.isEmpty && index > 0) {
+      // backspace → فوکوس قبلی
       _focusNodes[index - 1].requestFocus();
     }
+    if (_otpCode.length == 4) _verify();
+    setState(() {});
   }
 
   Future<void> _verify() async {
     if (_otpCode.length < 4) return;
-
     final auth = context.read<AuthProvider>();
     final success = await auth.verifyOtp(_otpCode);
-
     if (!mounted) return;
-
     if (success) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -100,9 +86,9 @@ class _OtpScreenState extends State<OtpScreen> {
         (route) => false,
       );
     } else {
-      // پاک کردن فیلدها و فوکوس اول
       for (final c in _controllers) c.clear();
       _focusNodes[0].requestFocus();
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.error ?? 'کد اشتباه است'),
@@ -123,6 +109,7 @@ class _OtpScreenState extends State<OtpScreen> {
     _startTimer();
     for (final c in _controllers) c.clear();
     _focusNodes[0].requestFocus();
+    setState(() {});
   }
 
   @override
@@ -153,10 +140,8 @@ class _OtpScreenState extends State<OtpScreen> {
               children: [
                 const SizedBox(height: 16),
 
-                // ── آیکون ──
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: 72, height: 72,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
@@ -168,21 +153,17 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── عنوان ──
-                Text(
-                  'کد تأیید',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? AppColors.darkText : AppColors.lightText,
-                  ),
-                ),
+                Text('کد تأیید',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? AppColors.darkText : AppColors.lightText,
+                    )),
                 const SizedBox(height: 8),
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
-                      fontSize: 14,
-                      height: 1.6,
+                      fontSize: 14, height: 1.6,
                       color: isDark
                           ? AppColors.darkTextSecondary
                           : AppColors.lightTextSecondary,
@@ -202,7 +183,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
                 // راهنمای Mock
                 Container(
@@ -218,47 +199,45 @@ class _OtpScreenState extends State<OtpScreen> {
                     children: [
                       Text('💡', style: TextStyle(fontSize: 14)),
                       SizedBox(width: 6),
-                      Text(
-                        'کد آزمایشی:  1234',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.secondary,
-                        ),
-                      ),
+                      Text('کد آزمایشی:  1234',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.secondary,
+                          )),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 36),
 
-                // ── ۴ فیلد OTP ──
+                // ── ۴ باکس OTP ──
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(4, (i) => _OtpBox(
-                    controller: _controllers[i],
-                    focusNode: _focusNodes[i],
-                    isDark: isDark,
-                    onChanged: (v) => _onChanged(v, i),
-                    onKeyEvent: (e) => _onKeyEvent(e, i),
-                  )),
+                  children: List.generate(
+                    4,
+                    (i) => _OtpBox(
+                      controller: _controllers[i],
+                      focusNode: _focusNodes[i],
+                      isDark: isDark,
+                      onChanged: (v) => _onChanged(v, i),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 32),
 
-                // ── تایمر + ارسال مجدد ──
+                // ── تایمر / ارسال مجدد ──
                 Center(
                   child: _canResend
                       ? TextButton(
                           onPressed: auth.isLoading ? null : _resend,
-                          child: const Text(
-                            'ارسال مجدد کد',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
+                          child: const Text('ارسال مجدد کد',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              )),
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
@@ -289,9 +268,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed:
-                        (auth.isLoading || _otpCode.length < 4)
-                            ? null
-                            : _verify,
+                        (auth.isLoading || _otpCode.length < 4) ? null : _verify,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -304,18 +281,14 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     child: auth.isLoading
                         ? const SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 22, height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
+                              strokeWidth: 2.5, color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            'تأیید و ورود',
+                        : const Text('تأیید و ورود',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w800),
-                          ),
+                                fontSize: 16, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ],
@@ -327,64 +300,57 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 }
 
-// ── هر باکس OTP ──
+// ── باکس OTP — بدون KeyboardListener ──
 class _OtpBox extends StatelessWidget {
   const _OtpBox({
     required this.controller,
     required this.focusNode,
     required this.isDark,
     required this.onChanged,
-    required this.onKeyEvent,
   });
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isDark;
   final ValueChanged<String> onChanged;
-  final ValueChanged<KeyEvent> onKeyEvent;
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: FocusNode(),
-      onKeyEvent: onKeyEvent,
-      child: SizedBox(
-        width: 68,
-        height: 68,
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          maxLength: 1,
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          onChanged: onChanged,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: isDark ? AppColors.darkText : AppColors.lightText,
+    return SizedBox(
+      width: 68, height: 68,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        maxLength: 1,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        // فقط اعداد قبول کن
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        onChanged: onChanged,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          color: isDark ? AppColors.darkText : AppColors.lightText,
+        ),
+        decoration: InputDecoration(
+          counterText: '',
+          filled: true,
+          fillColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
           ),
-          decoration: InputDecoration(
-            counterText: '',
-            filled: true,
-            fillColor:
-                isDark ? AppColors.darkSurface : AppColors.lightSurface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: isDark
+                  ? Colors.white12
+                  : Colors.black.withValues(alpha: 0.1),
+              width: 1.5,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: isDark
-                    ? Colors.white12
-                    : Colors.black.withValues(alpha: 0.1),
-                width: 1.5,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 2),
-            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
         ),
       ),
