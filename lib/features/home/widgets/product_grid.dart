@@ -53,18 +53,7 @@ class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
   final ProductModel product;
 
-  String _emojiForCategory(String id) {
-    switch (id) {
-      case '1':
-        return '🍢';
-      case '2':
-        return '🥗';
-      case '3':
-        return '🥤';
-      default:
-        return '🍽️';
-    }
-  }
+
 
   // قالب‌بندی قیمت به تومان با جداکننده هزارگان
   String _formatPrice(int price) {
