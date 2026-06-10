@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../providers/profile_provider.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -9,8 +10,9 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<ProfileProvider>();
-    final user = provider.user;
+    final profile = context.watch<ProfileProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final user = profile.user;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -22,10 +24,8 @@ class CustomDrawer extends StatelessWidget {
             children: [
               // ── هدر پروفایل ──
               _ProfileHeader(user: user, isDark: isDark),
-
               const SizedBox(height: 8),
 
-              // ── منوی دسترسی‌ها ──
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.zero,
@@ -65,15 +65,18 @@ class CustomDrawer extends StatelessWidget {
                           : Colors.black.withValues(alpha: 0.08),
                     ),
 
-                    // ── تنظیمات ──
                     _DrawerItem(
                       icon: Icons.settings_rounded,
                       label: 'تنظیمات برنامه',
                       onTap: () => _showComingSoon(context, 'تنظیمات'),
                       isDark: isDark,
                     ),
-                    // سوییچ حالت روز/شب
-                    _DarkModeToggle(provider: provider, isDark: isDark),
+
+                    // ── سوییچ dark mode — حالا واقعی کار میکنه ──
+                    _DarkModeToggle(
+                      isDark: isDark,
+                      onToggle: () => themeProvider.toggle(),
+                    ),
 
                     Divider(
                       height: 24,
@@ -84,19 +87,17 @@ class CustomDrawer extends StatelessWidget {
                           : Colors.black.withValues(alpha: 0.08),
                     ),
 
-                    // ── خروج ──
                     _DrawerItem(
                       icon: Icons.logout_rounded,
                       label: 'خروج از حساب',
                       color: Colors.red,
-                      onTap: () => _confirmSignOut(context, provider),
+                      onTap: () => _confirmSignOut(context, profile),
                       isDark: isDark,
                     ),
                   ],
                 ),
               ),
 
-              // ── ورژن اپ ──
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
@@ -123,7 +124,8 @@ class CustomDrawer extends StatelessWidget {
         content: Text('$feature به زودی اضافه میشه 🚀'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
         duration: const Duration(seconds: 2),
       ),
@@ -136,10 +138,11 @@ class CustomDrawer extends StatelessWidget {
       builder: (_) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
           title: const Text('خروج از حساب'),
-          content: const Text('مطمئنی می‌خوای از حساب کاربریت خارج بشی؟'),
+          content:
+              const Text('مطمئنی می‌خوای از حساب کاربریت خارج بشی؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -178,12 +181,9 @@ class _ProfileHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.8),
-          ],
+          colors: [AppColors.primary, Color(0xFFEF5350)],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
@@ -191,7 +191,6 @@ class _ProfileHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // آواتار
           Container(
             width: 64,
             height: 64,
@@ -205,7 +204,6 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // نام
           Text(
             user.fullName,
             style: const TextStyle(
@@ -215,16 +213,11 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          // شماره
           Text(
             user.phone,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
           const SizedBox(height: 12),
-          // امتیاز
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -274,8 +267,8 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemColor = color ??
-        (isDark ? AppColors.darkText : AppColors.lightText);
+    final itemColor =
+        color ?? (isDark ? AppColors.darkText : AppColors.lightText);
 
     return ListTile(
       onTap: onTap,
@@ -288,8 +281,7 @@ class _DrawerItem extends StatelessWidget {
           color: (color ?? AppColors.primary).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon,
-            color: color ?? AppColors.primary, size: 20),
+        child: Icon(icon, color: color ?? AppColors.primary, size: 20),
       ),
       title: Text(
         label,
@@ -309,12 +301,14 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// ── سوییچ حالت تاریک/روشن ──
+// ── سوییچ dark mode ──
 class _DarkModeToggle extends StatelessWidget {
-  const _DarkModeToggle(
-      {required this.provider, required this.isDark});
-  final ProfileProvider provider;
+  const _DarkModeToggle({
+    required this.isDark,
+    required this.onToggle,
+  });
   final bool isDark;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -335,7 +329,7 @@ class _DarkModeToggle extends StatelessWidget {
         ),
       ),
       title: Text(
-        isDark ? 'حالت شب' : 'حالت روز',
+        isDark ? 'حالت شب فعاله' : 'حالت روز فعاله',
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -344,14 +338,14 @@ class _DarkModeToggle extends StatelessWidget {
       ),
       trailing: Switch.adaptive(
         value: isDark,
-        onChanged: (_) => provider.toggleDarkMode(),
+        onChanged: (_) => onToggle(),
         activeColor: AppColors.primary,
       ),
     );
   }
 }
 
-// ── badge امتیاز ──
+
 class _PointsBadge extends StatelessWidget {
   const _PointsBadge({required this.points});
   final String points;
@@ -363,8 +357,8 @@ class _PointsBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.secondary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
-        border:
-            Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
+        border: Border.all(
+            color: AppColors.secondary.withValues(alpha: 0.4)),
       ),
       child: Text(
         '$points ⭐',

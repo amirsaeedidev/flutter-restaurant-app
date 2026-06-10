@@ -17,8 +17,30 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _HomeView extends StatelessWidget {
+class _HomeView extends StatefulWidget {
   const _HomeView();
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  bool _showSearch = false;
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() => _showSearch = !_showSearch);
+    if (!_showSearch) {
+      _searchController.clear();
+      context.read<HomeProvider>().clearSearch();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,80 +49,92 @@ class _HomeView extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ── AppBar چسبنده ──
+          // ── AppBar ──
           SliverAppBar(
             pinned: true,
             floating: true,
             snap: true,
-            expandedHeight: 110,
+            expandedHeight: _showSearch ? 60 : 110,
             backgroundColor:
                 isDark ? AppColors.darkBackground : AppColors.lightBackground,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              title: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '🍽️ منوی رستوران',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? AppColors.darkText : AppColors.lightText,
+              title: _showSearch
+                  ? _SearchField(
+                      controller: _searchController,
+                      isDark: isDark,
+                      onChanged: (q) =>
+                          context.read<HomeProvider>().setSearchQuery(q),
+                      onClose: _toggleSearch,
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🍽️ منوی رستوران',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: isDark
+                                ? AppColors.darkText
+                                : AppColors.lightText,
+                          ),
+                        ),
+                        Text(
+                          'بهترین غذاها در یک کلیک',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    'بهترین غذاها در یک کلیک',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
             ),
-            actions: [
-              // دکمه جستجو (آینده)
-              IconButton(
-                icon: Icon(
-                  Icons.search_rounded,
-                  color: isDark ? AppColors.darkText : AppColors.lightText,
-                ),
-                onPressed: () {},
-              ),
-              // دکمه پروفایل / Drawer
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: () => Scaffold.of(context).openDrawer(),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(10),
+            actions: _showSearch
+                ? []
+                : [
+                    IconButton(
+                      icon: Icon(Icons.search_rounded,
+                          color: isDark
+                              ? AppColors.darkText
+                              : AppColors.lightText),
+                      onPressed: _toggleSearch,
                     ),
-                    child: const Center(
-                      child: Text('👤', style: TextStyle(fontSize: 18)),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: GestureDetector(
+                        onTap: () => Scaffold.of(context).openDrawer(),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                            child:
+                                Text('👤', style: TextStyle(fontSize: 18)),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
+                    const SizedBox(width: 8),
+                  ],
           ),
 
-          // ── بنر تبلیغاتی ساده ──
-          SliverToBoxAdapter(
-            child: _PromoBanner(isDark: isDark),
-          ),
+          // ── بنر (مخفی میشه موقع سرچ) ──
+          if (!_showSearch)
+            SliverToBoxAdapter(
+              child: _PromoBanner(isDark: isDark),
+            ),
 
           // ── تب‌های کتگوری (Sticky) ──
           SliverPersistentHeader(
@@ -108,12 +142,71 @@ class _HomeView extends StatelessWidget {
             delegate: _StickyTabsDelegate(isDark: isDark),
           ),
 
-          // ── فاصله بالای گرید ──
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
           // ── گرید محصولات ──
           const ProductGrid(),
         ],
+      ),
+    );
+  }
+}
+
+// ── فیلد سرچ داخل AppBar ──
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.isDark,
+    required this.onChanged,
+    required this.onClose,
+  });
+  final TextEditingController controller;
+  final bool isDark;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 36,
+      child: TextField(
+        controller: controller,
+        autofocus: true,
+        textDirection: TextDirection.rtl,
+        onChanged: onChanged,
+        style: TextStyle(
+          fontSize: 14,
+          color: isDark ? AppColors.darkText : AppColors.lightText,
+        ),
+        decoration: InputDecoration(
+          hintText: 'جستجوی غذا...',
+          hintStyle: TextStyle(
+            fontSize: 13,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
+          ),
+          prefixIcon: Icon(Icons.search_rounded,
+              color: AppColors.primary, size: 20),
+          suffixIcon: GestureDetector(
+            onTap: onClose,
+            child: Icon(Icons.close_rounded,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+                size: 20),
+          ),
+          filled: true,
+          fillColor: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        ),
       ),
     );
   }
@@ -142,7 +235,6 @@ class _PromoBanner extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // متن بنر
           const Positioned(
             right: 20,
             top: 0,
@@ -151,36 +243,31 @@ class _PromoBanner extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '🎉 پیشنهاد ویژه',
-                  style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                ),
+                Text('🎉 پیشنهاد ویژه',
+                    style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500)),
                 SizedBox(height: 4),
                 Text(
                   '۲۰٪ تخفیف\nاولین سفارش',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    height: 1.3,
-                  ),
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      height: 1.3),
                 ),
                 SizedBox(height: 8),
                 _PromoCode(),
               ],
             ),
           ),
-          // ایموجی تزئینی
           const Positioned(
             left: 20,
             top: 10,
             bottom: 10,
             child: Center(
-              child: Text('🍖', style: TextStyle(fontSize: 72)),
-            ),
+                child: Text('🍖', style: TextStyle(fontSize: 72))),
           ),
         ],
       ),
@@ -200,20 +287,17 @@ class _PromoCode extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white38),
       ),
-      child: const Text(
-        'کد: FIRST20',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
+      child: const Text('کد: FIRST20',
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5)),
     );
   }
 }
 
-// ── Delegate برای چسباندن تب‌ها هنگام اسکرول ──
+// ── Sticky تب‌ها ──
 class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
   const _StickyTabsDelegate({required this.isDark});
   final bool isDark;
@@ -233,7 +317,9 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
           if (overlapsContent)
             Divider(
               height: 1,
-              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+              color: isDark
+                  ? Colors.white10
+                  : Colors.black.withValues(alpha: 0.06),
             ),
           const Expanded(
             child: Align(
@@ -247,6 +333,5 @@ class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(_StickyTabsDelegate oldDelegate) =>
-      oldDelegate.isDark != isDark;
+  bool shouldRebuild(_StickyTabsDelegate old) => old.isDark != isDark;
 }

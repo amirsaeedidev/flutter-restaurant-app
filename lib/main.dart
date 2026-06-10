@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
+import 'core/theme/theme_provider.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
 import 'features/orders/providers/orders_provider.dart';
 import 'main_wrapper.dart';
@@ -10,6 +11,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
@@ -24,9 +26,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ThemeProvider رو watch می‌کنیم — هر بار toggle بشه rebuild میشه
+    final themeMode = context.watch<ThemeProvider>().themeMode;
+
     return MaterialApp(
-      title: 'رستوران',
+      title: 'رستوران آزمایشی',
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode, // ← اینجاست که dark/light عوض میشه
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: AppColors.primary,
@@ -57,7 +63,6 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
         ),
       ),
-      themeMode: ThemeMode.system,
       home: const MainWrapper(),
     );
   }

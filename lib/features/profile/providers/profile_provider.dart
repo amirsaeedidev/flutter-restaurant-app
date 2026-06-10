@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/model/user_model.dart';
 
 class ProfileProvider extends ChangeNotifier {
-  // کاربر Mock — بعداً از Supabase میاد
   UserModel _user = const UserModel(
     id: 'mock_001',
     firstName: 'علی',
@@ -12,14 +11,6 @@ class ProfileProvider extends ChangeNotifier {
   );
 
   UserModel get user => _user;
-
-  bool _isDarkMode = false;
-  bool get isDarkMode => _isDarkMode;
-
-  void toggleDarkMode() {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-  }
 
   void updateUser({String? firstName, String? lastName}) {
     _user = _user.copyWith(
