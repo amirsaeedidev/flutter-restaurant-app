@@ -4,7 +4,6 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
-import 'features/loyalty/providers/loyalty_provider.dart';
 import 'features/orders/providers/orders_provider.dart';
 import 'features/auth/screens/onboarding.dart';
 import 'shared/providers/navigation_provider.dart';
@@ -18,7 +17,6 @@ void main() {
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
-        ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
       ],
       child: const MyApp(),
     ),
@@ -37,6 +35,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: ThemeData(
+        fontFamily: 'Lalezar',
         brightness: Brightness.light,
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.lightBackground,
@@ -52,6 +51,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       darkTheme: ThemeData(
+        fontFamily: 'Lalezar',
         brightness: Brightness.dark,
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.darkBackground,
@@ -66,7 +66,7 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
         ),
       ),
-     
+      // SplashScreen نقطه شروع — خودش تصمیم میگیره کجا بره
       home: const SplashScreen(),
     );
   }
