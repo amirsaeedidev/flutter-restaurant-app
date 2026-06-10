@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../loyalty/providers/loyalty_provider.dart';
+import '../../loyalty/screens/loyalty_screen.dart';
 import '../providers/profile_provider.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -33,8 +35,19 @@ class CustomDrawer extends StatelessWidget {
                     _DrawerItem(
                       icon: Icons.stars_rounded,
                       label: 'باشگاه مشترکین',
-                      trailing: _PointsBadge(points: user.formattedPoints),
-                      onTap: () => _showComingSoon(context, 'باشگاه مشترکین'),
+                      trailing: Consumer<LoyaltyProvider>(
+                        builder: (_, loyalty, __) => _PointsBadge(
+                          points: loyalty.formatPoints(loyalty.points),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const LoyaltyScreen()),
+                        );
+                      },
                       isDark: isDark,
                     ),
                     _DrawerItem(
@@ -345,7 +358,7 @@ class _DarkModeToggle extends StatelessWidget {
   }
 }
 
-
+// ── badge امتیاز ──
 class _PointsBadge extends StatelessWidget {
   const _PointsBadge({required this.points});
   final String points;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../cart_and_checkout/providers/cart_provider.dart';
+import '../../loyalty/providers/loyalty_provider.dart';
 import '../../orders/screens/recent_orders_screen.dart';
 
 enum _DeliveryType { delivery, dineIn }
@@ -197,8 +198,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  final totalPrice = cart.totalPrice;
                   cart.clearCart();
+                  // اضافه کردن امتیاز بر اساس مبلغ سفارش
+                  await context
+                      .read<LoyaltyProvider>()
+                      .addPointsForOrder(totalPrice);
+                  if (!context.mounted) return;
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
