@@ -1,0 +1,86 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum AuthStatus { unknown, unauthenticated, authenticated }
+
+class AuthProvider extends ChangeNotifier {
+  static const _keyIsLoggedIn = 'isLoggedIn';
+  static const _keyPhone = 'userPhone';
+
+  AuthStatus _status = AuthStatus.unknown;
+  String _phone = '';
+  bool _isLoading = false;
+  String? _error;
+
+  AuthStatus get status => _status;
+  String get phone => _phone;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get isAuthenticated => _status == AuthStatus.authenticated;
+
+  AuthProvider() {
+    _checkLoginStatus();
+  }
+
+  // بررسی وضعیت لاگین از SharedPreferences
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
+    _phone = prefs.getString(_keyPhone) ?? '';
+    _status = isLoggedIn
+        ? AuthStatus.authenticated
+        : AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
+  // ارسال OTP (Mock — بعداً Supabase)
+  Future<bool> sendOtp(String phone) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    // شبیه‌سازی تأخیر شبکه
+    await Future.delayed(const Duration(seconds: 1));
+
+    _phone = phone;
+    _isLoading = false;
+    notifyListeners();
+    return true; // همیشه موفق — Mock
+  }
+
+  // تأیید OTP (Mock — کد صحیح: 1234)
+  Future<bool> verifyOtp(String code) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (code == '1234') {
+      // ذخیره وضعیت لاگین
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsLoggedIn, true);
+      await prefs.setString(_keyPhone, _phone);
+
+      _status = AuthStatus.authenticated;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } else {
+      _error = 'کد وارد شده اشتباه است';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // خروج از حساب
+  Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyIsLoggedIn);
+    await prefs.remove(_keyPhone);
+    _status = AuthStatus.unauthenticated;
+    _phone = '';
+    notifyListeners();
+  }
+}
