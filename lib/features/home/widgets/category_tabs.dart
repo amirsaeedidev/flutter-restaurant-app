@@ -19,7 +19,7 @@ class CategoryTabs extends StatelessWidget {
         // جهت RTL: آیتم‌ها از راست شروع میشن
         reverse: true,
         itemCount: provider.categories.length + 1, // +۱ برای دکمه «همه»
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           // اولین آیتم (در RTL آخرین سمت راست) = «همه»
           if (index == provider.categories.length) {

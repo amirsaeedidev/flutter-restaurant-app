@@ -36,7 +36,7 @@ class CustomDrawer extends StatelessWidget {
                       icon: Icons.stars_rounded,
                       label: 'باشگاه مشترکین',
                       trailing: Consumer<LoyaltyProvider>(
-                        builder: (_, loyalty, __) => _PointsBadge(
+                        builder: (_, loyalty, _) => _PointsBadge(
                           points: loyalty.formatPoints(loyalty.points),
                         ),
                       ),

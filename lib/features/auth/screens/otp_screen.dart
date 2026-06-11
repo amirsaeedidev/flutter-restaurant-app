@@ -58,8 +58,12 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -86,7 +90,9 @@ class _OtpScreenState extends State<OtpScreen> {
         (route) => false,
       );
     } else {
-      for (final c in _controllers) c.clear();
+      for (final c in _controllers) {
+        c.clear();
+      }
       _focusNodes[0].requestFocus();
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +113,9 @@ class _OtpScreenState extends State<OtpScreen> {
     final auth = context.read<AuthProvider>();
     await auth.sendOtp(widget.phone);
     _startTimer();
-    for (final c in _controllers) c.clear();
+    for (final c in _controllers) {
+      c.clear();
+    }
     _focusNodes[0].requestFocus();
     setState(() {});
   }

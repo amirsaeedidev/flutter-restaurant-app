@@ -81,8 +81,8 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const OnboardingScreen(),
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(
+        pageBuilder: (_, _, _) => const OnboardingScreen(),
+        transitionsBuilder: (_, anim, _, child) => FadeTransition(
           opacity: CurvedAnimation(parent: anim, curve: Curves.easeInOut),
           child: child,
         ),
@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => Scaffold(
+      builder: (_, _) => Scaffold(
         backgroundColor: Color.lerp(
           AppColors.primary,
           isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -246,8 +246,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) => const LoginScreen(),
-        transitionsBuilder: (_, anim, __, child) {
+        pageBuilder: (_, _, _) => const LoginScreen(),
+        transitionsBuilder: (_, anim, _, child) {
           final slide = Tween<Offset>(
             begin: const Offset(-1, 0),
             end: Offset.zero,

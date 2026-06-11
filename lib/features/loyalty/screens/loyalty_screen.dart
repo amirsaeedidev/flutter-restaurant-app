@@ -204,7 +204,7 @@ class _LevelCard extends StatelessWidget {
                 tween: Tween(begin: 0, end: loyalty.progress),
                 duration: const Duration(milliseconds: 800),
                 curve: Curves.easeOutCubic,
-                builder: (_, value, __) => LinearProgressIndicator(
+                builder: (_, value, _) => LinearProgressIndicator(
                   value: value,
                   minHeight: 8,
                   backgroundColor: Colors.white24,
