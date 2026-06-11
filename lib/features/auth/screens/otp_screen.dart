@@ -15,10 +15,11 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(4, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
   static const _timerSeconds = 120;
   int _remaining = _timerSeconds;
@@ -30,7 +31,8 @@ class _OtpScreenState extends State<OtpScreen> {
     super.initState();
     _startTimer();
     WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _focusNodes[0].requestFocus());
+      (_) => _focusNodes[3].requestFocus(),
+    );
   }
 
   void _startTimer() {
@@ -53,7 +55,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return '$m:$s';
   }
 
-  String get _otpCode => _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.reversed.map((c) => c.text).join();
 
   @override
   void dispose() {
@@ -68,13 +70,16 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _onChanged(String value, int index) {
-    if (value.length == 1 && index < 3) {
-      _focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
-      // backspace → فوکوس قبلی
+    if (value.length == 1 && index > 0) {
       _focusNodes[index - 1].requestFocus();
+    } else if (value.isEmpty && index < 3) {
+      _focusNodes[index + 1].requestFocus();
     }
-    if (_otpCode.length == 4) _verify();
+
+    if (_otpCode.length == 4) {
+      _verify();
+    }
+
     setState(() {});
   }
 
@@ -93,7 +98,7 @@ class _OtpScreenState extends State<OtpScreen> {
       for (final c in _controllers) {
         c.clear();
       }
-      _focusNodes[0].requestFocus();
+      _focusNodes[3].requestFocus();
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -101,7 +106,8 @@ class _OtpScreenState extends State<OtpScreen> {
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
         ),
       );
@@ -116,7 +122,7 @@ class _OtpScreenState extends State<OtpScreen> {
     for (final c in _controllers) {
       c.clear();
     }
-    _focusNodes[0].requestFocus();
+    _focusNodes[3].requestFocus();
     setState(() {});
   }
 
@@ -128,15 +134,19 @@ class _OtpScreenState extends State<OtpScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         appBar: AppBar(
-          backgroundColor:
-              isDark ? AppColors.darkBackground : AppColors.lightBackground,
+          backgroundColor: isDark
+              ? AppColors.darkBackground
+              : AppColors.lightBackground,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_forward_rounded,
-                color: isDark ? AppColors.darkText : AppColors.lightText),
+            icon: Icon(
+              Icons.arrow_forward_rounded,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -149,7 +159,8 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 16),
 
                 Container(
-                  width: 72, height: 72,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
@@ -161,17 +172,20 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 const SizedBox(height: 24),
 
-                Text('کد تأیید',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? AppColors.darkText : AppColors.lightText,
-                    )),
+                Text(
+                  'کد تأیید',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? AppColors.darkText : AppColors.lightText,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
-                      fontSize: 14, height: 1.6,
+                      fontSize: 14,
+                      height: 1.6,
                       color: isDark
                           ? AppColors.darkTextSecondary
                           : AppColors.lightTextSecondary,
@@ -196,23 +210,28 @@ class _OtpScreenState extends State<OtpScreen> {
                 // راهنمای Mock
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.secondary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.secondary.withValues(alpha: 0.3)),
+                      color: AppColors.secondary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Row(
                     children: [
                       Text('💡', style: TextStyle(fontSize: 14)),
                       SizedBox(width: 6),
-                      Text('کد آزمایشی:  1234',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.secondary,
-                          )),
+                      Text(
+                        'کد آزمایشی:  1234',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.secondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -220,15 +239,18 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 36),
 
                 // ── ۴ باکس OTP ──
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    4,
-                    (i) => _OtpBox(
-                      controller: _controllers[i],
-                      focusNode: _focusNodes[i],
-                      isDark: isDark,
-                      onChanged: (v) => _onChanged(v, i),
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      4,
+                      (i) => _OtpBox(
+                        controller: _controllers[i],
+                        focusNode: _focusNodes[i],
+                        isDark: isDark,
+                        onChanged: (v) => _onChanged(v, i),
+                      ),
                     ),
                   ),
                 ),
@@ -240,21 +262,25 @@ class _OtpScreenState extends State<OtpScreen> {
                   child: _canResend
                       ? TextButton(
                           onPressed: auth.isLoading ? null : _resend,
-                          child: const Text('ارسال مجدد کد',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              )),
+                          child: const Text(
+                            'ارسال مجدد کد',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
                         )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.timer_outlined,
-                                size: 16,
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary),
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 16,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'ارسال مجدد تا $_timerText',
@@ -275,28 +301,37 @@ class _OtpScreenState extends State<OtpScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed:
-                        (auth.isLoading || _otpCode.length < 4) ? null : _verify,
+                    onPressed: (auth.isLoading || _otpCode.length < 4)
+                        ? null
+                        : _verify,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor:
-                          AppColors.primary.withValues(alpha: 0.4),
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 0.4,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: auth.isLoading
                         ? const SizedBox(
-                            width: 22, height: 22,
+                            width: 22,
+                            height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white,
+                              strokeWidth: 2.5,
+                              color: Colors.white,
                             ),
                           )
-                        : const Text('تأیید و ورود',
+                        : const Text(
+                            'تأیید و ورود',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w800)),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -309,56 +344,112 @@ class _OtpScreenState extends State<OtpScreen> {
 }
 
 // ── باکس OTP — بدون KeyboardListener ──
-class _OtpBox extends StatelessWidget {
+class _OtpBox extends StatefulWidget {
   const _OtpBox({
     required this.controller,
     required this.focusNode,
     required this.isDark,
     required this.onChanged,
   });
+
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isDark;
   final ValueChanged<String> onChanged;
 
   @override
+  State<_OtpBox> createState() => _OtpBoxState();
+}
+
+class _OtpBoxState extends State<_OtpBox> {
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.addListener(_refresh);
+    widget.focusNode.addListener(_refresh);
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_refresh);
+    widget.focusNode.removeListener(_refresh);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 68, height: 68,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        maxLength: 1,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        // فقط اعداد قبول کن
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: onChanged,
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w800,
-          color: isDark ? AppColors.darkText : AppColors.lightText,
-        ),
-        decoration: InputDecoration(
-          counterText: '',
-          filled: true,
-          fillColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-          border: OutlineInputBorder(
+      width: 68,
+      height: 68,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutBack,
+        scale: widget.controller.text.isNotEmpty ? 1.08 : 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+            boxShadow: widget.focusNode.hasFocus
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: .25),
+                      blurRadius: 16,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: isDark
-                  ? Colors.white12
-                  : Colors.black.withValues(alpha: 0.1),
-              width: 1.5,
+          child: TextField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            maxLength: 1,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: false,
+              signed: false,
             ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            textInputAction: TextInputAction.next,
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.ltr,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: widget.onChanged,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: widget.isDark ? AppColors.darkText : AppColors.lightText,
+            ),
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: widget.isDark
+                  ? AppColors.darkSurface
+                  : AppColors.lightSurface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: widget.isDark
+                      ? Colors.white12
+                      : Colors.black.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
+              ),
+            ),
           ),
         ),
       ),
