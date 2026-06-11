@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../discount/providers/discount_provider.dart';
+import '../../discount/screens/discount_screen.dart';
 import '../../loyalty/providers/loyalty_provider.dart';
 import '../../loyalty/screens/loyalty_screen.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/edit_profile_sheet.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -26,6 +29,8 @@ class CustomDrawer extends StatelessWidget {
             children: [
               // ── هدر پروفایل ──
               _ProfileHeader(user: user, isDark: isDark),
+              // دکمه ویرایش پروفایل زیر هدر
+              _EditProfileBtn(isDark: isDark),
               const SizedBox(height: 8),
 
               Expanded(
@@ -36,7 +41,7 @@ class CustomDrawer extends StatelessWidget {
                       icon: Icons.stars_rounded,
                       label: 'باشگاه مشترکین',
                       trailing: Consumer<LoyaltyProvider>(
-                        builder: (_, loyalty, _) => _PointsBadge(
+                        builder: (_, loyalty, __) => _PointsBadge(
                           points: loyalty.formatPoints(loyalty.points),
                         ),
                       ),
@@ -53,7 +58,18 @@ class CustomDrawer extends StatelessWidget {
                     _DrawerItem(
                       icon: Icons.local_offer_rounded,
                       label: 'تخفیفات و کدهای تخفیف',
-                      onTap: () => _showComingSoon(context, 'تخفیفات'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChangeNotifierProvider(
+                              create: (_) => DiscountProvider(),
+                              child: const DiscountScreen(),
+                            ),
+                          ),
+                        );
+                      },
                       isDark: isDark,
                     ),
                     _DrawerItem(
@@ -262,6 +278,64 @@ class _ProfileHeader extends StatelessWidget {
 }
 
 // ── آیتم منو ──
+// ── دکمه ویرایش پروفایل ──
+class _EditProfileBtn extends StatelessWidget {
+  const _EditProfileBtn({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => ChangeNotifierProvider.value(
+            value: context.read<ProfileProvider>(),
+            child: const EditProfileSheet(),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.edit_rounded,
+                size: 16,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary),
+            const SizedBox(width: 6),
+            Text(
+              'ویرایش پروفایل',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
