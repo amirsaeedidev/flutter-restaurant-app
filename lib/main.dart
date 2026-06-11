@@ -4,6 +4,7 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/cart_and_checkout/providers/cart_provider.dart';
+import 'features/discount/providers/discount_provider.dart';
 import 'features/loyalty/providers/loyalty_provider.dart';
 import 'features/orders/providers/orders_provider.dart';
 import 'features/profile/providers/profile_provider.dart';
@@ -21,6 +22,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => DiscountProvider()),
       ],
       child: const MyApp(),
     ),
