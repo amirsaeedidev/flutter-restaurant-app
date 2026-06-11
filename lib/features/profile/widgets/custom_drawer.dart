@@ -41,7 +41,7 @@ class CustomDrawer extends StatelessWidget {
                       icon: Icons.stars_rounded,
                       label: 'باشگاه مشترکین',
                       trailing: Consumer<LoyaltyProvider>(
-                        builder: (_, loyalty, __) => _PointsBadge(
+                        builder: (_, loyalty, _) => _PointsBadge(
                           points: loyalty.formatPoints(loyalty.points),
                         ),
                       ),
@@ -210,13 +210,22 @@ class _ProfileHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, Color(0xFFEF5350)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      ),
+     decoration: BoxDecoration(
+  gradient: LinearGradient(
+    colors: isDark
+        ? [
+            const Color(0xFF1A1A1A),
+            const Color(0xFF3D0000),
+            const Color(0xFF8B0000),
+          ]
+        : [
+            AppColors.primary,
+            const Color.fromARGB(255, 252, 85, 13),
+          ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -281,61 +290,94 @@ class _ProfileHeader extends StatelessWidget {
 // ── دکمه ویرایش پروفایل ──
 class _EditProfileBtn extends StatelessWidget {
   const _EditProfileBtn({required this.isDark});
+
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => ChangeNotifierProvider.value(
-            value: context.read<ProfileProvider>(),
-            child: const EditProfileSheet(),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => ChangeNotifierProvider.value(
+              value: context.read<ProfileProvider>(),
+              child: const EditProfileSheet(),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
           ),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF232323)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white10
+                  : Colors.black.withValues(alpha: 0.06),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.edit_rounded,
-                size: 16,
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary),
-            const SizedBox(width: 6),
-            Text(
-              'ویرایش پروفایل',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: Text(
+                  'ویرایش اطلاعات پروفایل',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? AppColors.darkText
+                        : AppColors.lightText,
+                  ),
+                ),
+              ),
+
+              Icon(
+                Icons.edit_rounded,
+                size: 18,
                 color: isDark
                     ? AppColors.darkTextSecondary
                     : AppColors.lightTextSecondary,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
