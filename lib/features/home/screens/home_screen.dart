@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../providers/home_provider.dart';
 import '../widgets/category_tabs.dart';
 import '../widgets/product_grid.dart';
+import 'dart:ui';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -215,61 +216,149 @@ class _SearchField extends StatelessWidget {
 // ── بنر تبلیغاتی ──
 class _PromoBanner extends StatelessWidget {
   const _PromoBanner({required this.isDark});
+
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      height: 130,
+      height: 180,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withRed(200).withValues(alpha: 0.85),
-          ],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-        ),
         borderRadius: BorderRadius.circular(20),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            right: 20,
-            top: 0,
-            bottom: 0,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('🎉 پیشنهاد ویژه',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500)),
-                SizedBox(height: 4),
-                Text(
-                  '۲۰٪ تخفیف\nاولین سفارش',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      height: 1.3),
-                ),
-                SizedBox(height: 8),
-                _PromoCode(),
-              ],
-            ),
-          ),
-          const Positioned(
-            left: 20,
-            top: 10,
-            bottom: 10,
-            child: Center(
-                child: Text('🍖', style: TextStyle(fontSize: 72))),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: 2,
+            spreadRadius: 2,
+            offset: const Offset(0, 10),
           ),
         ],
+        image: const DecorationImage(
+          image: AssetImage('assets/images/baner.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // تیره کردن تصویر
+            Container(
+              color: Colors.black.withValues(alpha: 0.10),
+            ),
+
+            // Glow نارنجی بالا چپ
+            Positioned(
+              left: -40,
+              top: -30,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.orange.withValues(alpha: 0.18),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(
+                    sigmaX: 0,
+                    sigmaY: 0,
+                  ),
+                  child: const SizedBox(),
+                ),
+              ),
+            ),
+
+            
+           
+
+            // کارت شیشه‌ای
+            Positioned(
+              right: 12,
+              top: 12,
+              bottom: 12,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(
+                    sigmaX: 4,
+                    sigmaY: 2,
+                  ),
+                  child: Container(
+                    width: 150,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 20,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🎉 پیشنهاد ویژه',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          '۲۰٪ تخفیف\nاولین سفارش',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            height: 1.2,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        _PromoCode(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // تصویر کباب
+            Positioned(
+              left: 10,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withValues(alpha: 0.35),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Image.asset('assets/images/soda.png'
+                  ,scale: 22,
+                  
+                  )
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

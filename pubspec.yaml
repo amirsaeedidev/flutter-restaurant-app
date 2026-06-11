@@ -72,6 +72,9 @@ flutter:
     - assets/images/food.jpg
     - assets/images/cafe.png
     - assets/images/all.png
+    - assets/images/baner.png
+    - assets/images/soda.png
+    - assets/images/hamber.png
     
   #   - images/a_dot_ham.jpeg
 
