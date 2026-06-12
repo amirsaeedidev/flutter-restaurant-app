@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/product_model.dart';
@@ -5,291 +6,322 @@ import '../../../core/theme/app_colors.dart';
 import '../../cart_and_checkout/providers/cart_provider.dart';
 import '../../../shared/providers/navigation_provider.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
   final ProductModel product;
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  bool _showAddedSnackbar = false;
+  String _snackbarMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.1, 0.7, curve: Curves.easeOutCubic),
+    ));
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _triggerAddedToCartAnimation(String message) {
+    setState(() {
+      _showAddedSnackbar = true;
+      _snackbarMessage = message;
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() => _showAddedSnackbar = false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cart = context.watch<CartProvider>();
-    final inCart = cart.isInCart(product.id);
+    final inCart = cart.isInCart(widget.product.id);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor:
             isDark ? AppColors.darkBackground : AppColors.lightBackground,
-        body: CustomScrollView(
-          slivers: [
-            // ── AppBar با تصویر ──
-            SliverAppBar(
-              expandedHeight: 280,
-              pinned: true,
-              backgroundColor:
-                  isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              leading: _BackButton(isDark: isDark),
-              actions: [
-                _CartBadgeButton(isDark: isDark, itemCount: cart.itemCount),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: _ProductImage(product: product, isDark: isDark),
-              ),
-            ),
-
-            // ── محتوا ──
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // نام + بج پرطرفدار
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.name,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: isDark
-                                  ? AppColors.darkText
-                                  : AppColors.lightText,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                        if (product.isPopular) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: AppColors.secondary.withValues(alpha: 0.4)),
-                            ),
-                            child: const Text('🔥 پرطرفدار',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.secondary)),
-                          ),
-                        ],
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ستاره‌ها و تعداد نظر
-                    _RatingRow(product: product),
-
-                    const SizedBox(height: 16),
-
-                    // قیمت
-                    _PriceTag(price: product.price, isDark: isDark),
-
-                    const SizedBox(height: 20),
-
-                    // خط جدا
-                    Divider(
-                        color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07)),
-
-                    const SizedBox(height: 16),
-
-                    // توضیحات
-                    Text('درباره این غذا',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? AppColors.darkText : AppColors.lightText)),
-                    const SizedBox(height: 8),
-                    Text(
-                      product.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.8,
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ستاره‌های ثابت (static)
-                    _StaticReviewSection(product: product, isDark: isDark),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        // ── دکمه‌های پایین ──
-        bottomNavigationBar: _BottomButtons(
-          product: product,
-          inCart: inCart,
-          isDark: isDark,
-        ),
-      ),
-    );
-  }
-}
-
-// ── تصویر محصول ──
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({required this.product, required this.isDark});
-  final ProductModel product;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.04)
-          : AppColors.primary.withValues(alpha: 0.06),
-      child: Center(
-        child: Text(
-          _emojiForCategory(product.categoryId),
-          style: const TextStyle(fontSize: 110),
-        ),
-      ),
-    );
-  }
-
-  String _emojiForCategory(String id) {
-    switch (id) {
-      case '1': return '🍢';
-      case '2': return '🥗';
-      case '3': return '🥤';
-      default:  return '🍽️';
-    }
-  }
-}
-
-// ── دکمه برگشت ──
-class _BackButton extends StatelessWidget {
-  const _BackButton({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
-          ),
-          child: Icon(Icons.arrow_forward_rounded,
-              color: isDark ? AppColors.darkText : AppColors.lightText, size: 20),
-        ),
-      ),
-    );
-  }
-}
-
-// ── آیکون سبد با badge ──
-class _CartBadgeButton extends StatelessWidget {
-  const _CartBadgeButton({required this.isDark, required this.itemCount});
-  final bool isDark;
-  final int itemCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GestureDetector(
-        onTap: () => context.read<NavigationProvider>().setIndex(0),
-        child: Stack(
+        body: Stack(
           children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
-              ),
-              child: const Icon(Icons.shopping_cart_rounded,
-                  color: AppColors.primary, size: 20),
-            ),
-            if (itemCount > 0)
-              Positioned(
-                top: 0, left: 0,
-                child: Container(
-                  width: 16, height: 16,
-                  decoration: const BoxDecoration(
-                      color: AppColors.primary, shape: BoxShape.circle),
-                  child: Center(
-                    child: Text('$itemCount',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold)),
+            CustomScrollView(
+              slivers: [
+                // Hero area with floating info card
+                SliverAppBar(
+                  clipBehavior: Clip.none, 
+                  expandedHeight: 340,
+                  pinned: false,
+                  floating: false,
+                  stretch: true,
+                  leading: _BackButton(isDark: isDark),
+                  actions: [
+                    _CartBadgeButton(isDark: isDark, itemCount: cart.itemCount),
+                  ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.parallax,
+                    background: _HeroSection(
+                      product: widget.product,
+                      isDark: isDark,
+                      fadeAnimation: _fadeAnimation,
+                      slideAnimation: _slideAnimation,
+                    ),
                   ),
                 ),
+                // Content (description + reviews) without card overlap
+                SliverToBoxAdapter(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: _ContentSection(
+                        product: widget.product,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ),
+                ),
+                // Bottom padding for bottom bar
+                const SliverToBoxAdapter(child: SizedBox(height: 90)),
+              ],
+            ),
+
+            // Custom glassmorphism snackbar
+            if (_showAddedSnackbar)
+              Positioned(
+                bottom: 90,
+                left: 20,
+                right: 20,
+                child: _PremiumNotification(
+                  message: _snackbarMessage,
+                  isDark: isDark,
+                  onDismissed: () =>
+                      setState(() => _showAddedSnackbar = false),
+                ),
               ),
           ],
+        ),
+        bottomNavigationBar: _FloatingBottomBar(
+          product: widget.product,
+          inCart: inCart,
+          isDark: isDark,
+          onAddedToCart: _triggerAddedToCartAnimation,
         ),
       ),
     );
   }
 }
 
-// ── ردیف ستاره‌ها ──
-class _RatingRow extends StatelessWidget {
-  const _RatingRow({required this.product});
+// ─────────────────────────────────────────────────────
+// Hero Section: Image + Floating Glass Card Overlap
+// ─────────────────────────────────────────────────────
+class _HeroSection extends StatelessWidget {
+  const _HeroSection({
+    required this.product,
+    required this.isDark,
+    required this.fadeAnimation,
+    required this.slideAnimation,
+  });
   final ProductModel product;
+  final bool isDark;
+  final Animation<double> fadeAnimation;
+  final Animation<Offset> slideAnimation;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Stack(
+      clipBehavior: Clip.none,
+      fit: StackFit.expand,
       children: [
-        ...List.generate(5, (i) {
-          final full = i < product.rating.floor();
-          final half = !full && i < product.rating;
-          return Icon(
-            full ? Icons.star_rounded : (half ? Icons.star_half_rounded : Icons.star_outline_rounded),
-            color: AppColors.secondary,
-            size: 20,
-          );
-        }),
-        const SizedBox(width: 6),
-        Text(
-          product.rating.toStringAsFixed(1),
-          style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.secondary),
+        // Image
+        Image.asset(
+          product.imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
+            child: const Center(
+              child: Icon(
+                Icons.image_outlined,
+                size: 80,
+                color: Colors.grey,
+              ),
+            ),
+          ),
         ),
-        const SizedBox(width: 4),
-        Text(
-          '(${product.reviewCount} نظر)',
-          style: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary),
+
+        // Gradient overlay at bottom
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 150,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  (isDark
+                          ? AppColors.darkBackground
+                          : AppColors.lightBackground)
+                      .withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Floating Glass Card
+        Positioned(
+          
+          left: 16,
+          right: 16,
+          bottom: -40,
+          child: FadeTransition(
+            opacity: fadeAnimation,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: _FloatingProductCard(product: product, isDark: isDark),
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-// ── قیمت ──
-class _PriceTag extends StatelessWidget {
-  const _PriceTag({required this.price, required this.isDark});
-  final int price;
+// ─────────────────────────────────────────────────────
+// Glassmorphism Product Info Card
+// ─────────────────────────────────────────────────────
+class _FloatingProductCard extends StatelessWidget {
+  const _FloatingProductCard({required this.product, required this.isDark});
+  final ProductModel product;
   final bool isDark;
 
-  String _format(int p) {
-    final s = p.toString();
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final subColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: 8,
+          sigmaY: 8,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.55)
+                : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.08),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Badges row
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (product.isPopular)
+                    _GlassBadge(
+                      icon: Icons.local_fire_department_rounded,
+                      label: 'پرطرفدار',
+                      color: Colors.deepOrange,
+                      isDark: isDark,
+                    ),
+                  _GlassBadge(
+                    icon: Icons.star_rounded,
+                    label: product.rating.toStringAsFixed(1),
+                    color: AppColors.secondary,
+                    isDark: isDark,
+                  ),
+                  _GlassBadge(
+                    icon: Icons.reviews_rounded,
+                    label: '${product.reviewCount} نظر',
+                    color: subColor,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Title
+              Text(
+                product.name,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Price
+              Text(
+                '${_formatPrice(product.price)} تومان',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatPrice(int price) {
+    final s = price.toString();
     final buf = StringBuffer();
     final offset = s.length % 3;
     for (int i = 0; i < s.length; i++) {
@@ -298,35 +330,236 @@ class _PriceTag extends StatelessWidget {
     }
     return buf.toString();
   }
+}
+
+// ─────────────────────────────────────────────────────
+// Glass Badge Pill
+// ─────────────────────────────────────────────────────
+class _GlassBadge extends StatelessWidget {
+  const _GlassBadge({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text('قیمت:',
-            style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-        const SizedBox(width: 8),
-        Text(
-          '${_format(price)} تومان',
-          style: const TextStyle(
-              fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: color.withValues(alpha: 0.5),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
 
-// ── بخش نظرات استاتیک ──
-class _StaticReviewSection extends StatelessWidget {
-  const _StaticReviewSection({required this.product, required this.isDark});
+// ─────────────────────────────────────────────────────
+// Premium Glass Notification (replaces SnackBar)
+// ─────────────────────────────────────────────────────
+class _PremiumNotification extends StatefulWidget {
+  const _PremiumNotification({
+    required this.message,
+    required this.isDark,
+    required this.onDismissed,
+  });
+  final String message;
+  final bool isDark;
+  final VoidCallback onDismissed;
+
+  @override
+  State<_PremiumNotification> createState() => _PremiumNotificationState();
+}
+
+class _PremiumNotificationState extends State<_PremiumNotification>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 1.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _ctrl,
+      curve: Curves.easeOutCubic,
+    ));
+    _fade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _ctrl.forward();
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _ctrl.reverse().then((_) => widget.onDismissed());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slide,
+      child: FadeTransition(
+        opacity: _fade,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: widget.isDark
+                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
+                    : Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: widget.isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.08),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: widget.isDark ? 0.5 : 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded,
+                      color: AppColors.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: TextStyle(
+                        color: widget.isDark
+                            ? AppColors.darkText
+                            : AppColors.lightText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      _ctrl.reverse().then((_) => widget.onDismissed());
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.1),
+                      ),
+                      child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// Content Section: Description & Reviews
+// ─────────────────────────────────────────────────────
+class _ContentSection extends StatelessWidget {
+  const _ContentSection({required this.product, required this.isDark});
   final ProductModel product;
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    // نظرات ساختگی ثابت
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+         
+          Text(
+            'درباره این غذا',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            product.description,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.8,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 28),
+          _ReviewSection(product: product, isDark: isDark),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewSection extends StatelessWidget {
+  const _ReviewSection({required this.product, required this.isDark});
+  final ProductModel product;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    // static sample reviews (could come from backend)
     final reviews = [
       (name: 'علی رضایی', stars: 5, text: 'عالی بود! کیفیت گوشت فوق‌العاده.'),
       (name: 'مریم احمدی', stars: 4, text: 'خوشمزه، فقط کمی دیر رسید.'),
@@ -336,12 +569,29 @@ class _StaticReviewSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('نظرات مشتریان',
-            style: TextStyle(
-                fontSize: 16,
+        Row(
+          children: [
+            Text(
+              'نظرات مشتریان',
+              style: TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.darkText : AppColors.lightText)),
-        const SizedBox(height: 12),
+                color: isDark ? AppColors.darkText : AppColors.lightText,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '(${product.reviewCount})',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         ...reviews.map((r) => _ReviewCard(review: r, isDark: isDark)),
       ],
     );
@@ -356,111 +606,199 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
         border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06)),
+          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+        ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(review.name,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.darkText : AppColors.lightText)),
-              const Spacer(),
-              Row(
-                children: List.generate(
-                  review.stars,
-                  (_) => const Icon(Icons.star_rounded,
-                      color: AppColors.secondary, size: 14),
-                ),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+            child: Text(
+              review.name[0],
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(review.text,
-              style: TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      review.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: isDark ? AppColors.darkText : AppColors.lightText,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: List.generate(
+                        review.stars,
+                        (_) => const Icon(Icons.star_rounded,
+                            color: AppColors.secondary, size: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  review.text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-// ── دکمه‌های پایین: برگشت به منو + افزودن به سبد ──
-class _BottomButtons extends StatelessWidget {
-  const _BottomButtons({
+// ─────────────────────────────────────────────────────
+// Floating Bottom Bar (Glassmorphism, Material 3)
+// ─────────────────────────────────────────────────────
+class _FloatingBottomBar extends StatelessWidget {
+  const _FloatingBottomBar({
     required this.product,
     required this.inCart,
     required this.isDark,
+    required this.onAddedToCart,
   });
   final ProductModel product;
   final bool inCart;
   final bool isDark;
+  final Function(String message) onAddedToCart;
+
+  String _format(int price) {
+    final s = price.toString();
+    final buf = StringBuffer();
+    final offset = s.length % 3;
+    for (int i = 0; i < s.length; i++) {
+      if (i != 0 && (i - offset) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.07),
-              blurRadius: 16,
-              offset: const Offset(0, -4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          // برگشت به منو
-          Expanded(
-            flex: 2,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: const Text('برگشت به منو'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+    final total = product.price;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 30),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF121212).withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.08),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // افزودن به سبد
-          Expanded(
-            flex: 3,
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddToCartSheet(context),
-              icon: Icon(inCart
-                  ? Icons.shopping_cart_rounded
-                  : Icons.add_shopping_cart_rounded, size: 20),
-              label: Text(inCart ? 'مشاهده / ویرایش سبد' : 'افزودن به سبد'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.15),
+                blurRadius: 30,
+                offset: const Offset(0, -8),
               ),
-            ),
+            ],
           ),
-        ],
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'قیمت',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_format(total)} تومان',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showAddToCartSheet(context),
+                    icon: Icon(
+                      inCart
+                          ? Icons.shopping_cart_rounded
+                          : Icons.add_shopping_cart_rounded,
+                      size: 22,
+                    ),
+                    label: Text(
+                      inCart ? 'ویرایش سبد' : 'افزودن به سبد',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 8,
+                      shadowColor: AppColors.primary.withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -470,15 +808,21 @@ class _BottomButtons extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _AddToCartSheet(product: product),
+      builder: (_) => _AddToCartSheet(
+        product: product,
+        onAdded: onAddedToCart,
+      ),
     );
   }
 }
 
-// ── Bottom Sheet افزودن به سبد ──
+// ─────────────────────────────────────────────────────
+// Add to Cart Bottom Sheet
+// ─────────────────────────────────────────────────────
 class _AddToCartSheet extends StatefulWidget {
-  const _AddToCartSheet({required this.product});
+  const _AddToCartSheet({required this.product, required this.onAdded});
   final ProductModel product;
+  final Function(String) onAdded;
 
   @override
   State<_AddToCartSheet> createState() => _AddToCartSheetState();
@@ -491,7 +835,6 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
   @override
   void initState() {
     super.initState();
-    // اگه قبلاً در سبد بوده، تعداد و توضیحات قبلی رو بیار
     final cart = context.read<CartProvider>();
     _quantity = cart.quantityOf(widget.product.id).clamp(1, 99);
     _noteController.text = cart.noteOf(widget.product.id);
@@ -522,44 +865,46 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomPadding),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // handle
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 5,
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white24 : Colors.black12,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-
-            // نام غذا
-            Text(widget.product.name,
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? AppColors.darkText : AppColors.lightText)),
-            const SizedBox(height: 20),
-
-            // انتخاب تعداد
+            const SizedBox(height: 24),
+            Text(
+              widget.product.name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkText : AppColors.lightText,
+              ),
+            ),
+            const SizedBox(height: 24),
             Row(
               children: [
-                Text('تعداد:',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary)),
+                Text(
+                  'تعداد:',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                ),
                 const Spacer(),
                 _QuantityControl(
                   quantity: _quantity,
@@ -571,9 +916,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // توضیحات سفارش
+            const SizedBox(height: 20),
             TextField(
               controller: _noteController,
               maxLines: 2,
@@ -581,25 +924,24 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
               decoration: InputDecoration(
                 hintText: 'توضیحات (مثلاً: بدون نمک، تند نباشه...)',
                 hintStyle: TextStyle(
-                    fontSize: 13,
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary),
+                  fontSize: 14,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                ),
                 filled: true,
                 fillColor: isDark
                     ? Colors.white.withValues(alpha: 0.06)
                     : Colors.black.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
-            const SizedBox(height: 20),
-
-            // دکمه تأیید + جمع قیمت
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -607,15 +949,18 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: Text(
                   'افزودن به سبد  —  ${_format(widget.product.price)} تومان',
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -632,20 +977,112 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
           note: _noteController.text.trim(),
         );
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${widget.product.name} به سبد اضافه شد ✅'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+    widget.onAdded('${widget.product.name} به سبد اضافه شد ✅');
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// Back Button & Cart Badge
+// ─────────────────────────────────────────────────────
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 10,
+              )
+            ],
+          ),
+          child: Icon(
+            Icons.arrow_forward_rounded,
+            color: isDark ? AppColors.darkText : AppColors.lightText,
+            size: 22,
+          ),
+        ),
       ),
     );
   }
 }
 
-// ── کنترل تعداد (− عدد +) ──
+class _CartBadgeButton extends StatelessWidget {
+  const _CartBadgeButton({required this.isDark, required this.itemCount});
+  final bool isDark;
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: GestureDetector(
+        onTap: () => context.read<NavigationProvider>().setIndex(0),
+        child: Stack(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                  )
+                ],
+              ),
+              child: const Icon(
+                Icons.shopping_cart_rounded,
+                color: AppColors.primary,
+                size: 22,
+              ),
+            ),
+            if (itemCount > 0)
+              Positioned(
+                top: -2,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// Quantity Control
+// ─────────────────────────────────────────────────────
 class _QuantityControl extends StatelessWidget {
   const _QuantityControl({
     required this.quantity,
@@ -664,14 +1101,22 @@ class _QuantityControl extends StatelessWidget {
       children: [
         _QBtn(icon: Icons.remove_rounded, onTap: onDecrement, isDark: isDark),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('$quantity',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkText : AppColors.lightText)),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Text(
+            '$quantity',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
+            ),
+          ),
         ),
-        _QBtn(icon: Icons.add_rounded, onTap: onIncrement, isDark: isDark, isPrimary: true),
+        _QBtn(
+          icon: Icons.add_rounded,
+          onTap: onIncrement,
+          isDark: isDark,
+          isPrimary: true,
+        ),
       ],
     );
   }
@@ -694,18 +1139,21 @@ class _QBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 36, height: 36,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: isPrimary
               ? AppColors.primary
               : (isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07)),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon,
-            size: 20,
-            color: isPrimary
-                ? Colors.white
-                : (isDark ? AppColors.darkText : AppColors.lightText)),
+        child: Icon(
+          icon,
+          size: 22,
+          color: isPrimary
+              ? Colors.white
+              : (isDark ? AppColors.darkText : AppColors.lightText),
+        ),
       ),
     );
   }
