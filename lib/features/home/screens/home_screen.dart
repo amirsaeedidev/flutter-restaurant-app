@@ -25,19 +25,50 @@ class _HomeView extends StatefulWidget {
   State<_HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<_HomeView> {
+class _HomeViewState extends State<_HomeView> with TickerProviderStateMixin {
   bool _showSearch = false;
   final _searchController = TextEditingController();
+
+  late final AnimationController _searchAnimationController;
+  late final Animation<double> _searchHeightAnimation;
+  late final Animation<double> _bannerOpacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+
+    _searchHeightAnimation = Tween<double>(begin: 110, end: 60).animate(
+      CurvedAnimation(
+          parent: _searchAnimationController, curve: Curves.easeOutCubic),
+    );
+
+    _bannerOpacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+          parent: _searchAnimationController, curve: Curves.easeOutCubic),
+    );
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchAnimationController.dispose();
     super.dispose();
   }
 
   void _toggleSearch() {
     setState(() => _showSearch = !_showSearch);
-    if (!_showSearch) {
+
+    if (_showSearch) {
+      _searchAnimationController.forward();
+      Future.delayed(const Duration(milliseconds: 180), () {
+        if (mounted) FocusScope.of(context).requestFocus(FocusNode());
+      });
+    } else {
+      _searchAnimationController.reverse();
       _searchController.clear();
       context.read<HomeProvider>().clearSearch();
     }
@@ -50,67 +81,115 @@ class _HomeViewState extends State<_HomeView> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ── AppBar ──
+          // ── AppBar با انیمیشن نرم ──
           SliverAppBar(
             pinned: true,
             floating: true,
             snap: true,
-            expandedHeight: _showSearch ? 60 : 110,
+            expandedHeight: _searchHeightAnimation.value,
             backgroundColor:
                 isDark ? AppColors.darkBackground : AppColors.lightBackground,
             elevation: 0,
+            // ⬅️ منو به leading (سمت راست در RTL)
+            leading: _showSearch
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(right: 8,top: 2),
+                    child: GestureDetector(
+                      onTap: () => Scaffold.of(context).openDrawer(),
+                      child: Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.menu_rounded),
+                        ),
+                      ),
+                    ),
+                  ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              title: _showSearch
-                  ? _SearchField(
-                      controller: _searchController,
-                      isDark: isDark,
-                      onChanged: (q) =>
-                          context.read<HomeProvider>().setSearchQuery(q),
-                      onClose: _toggleSearch,
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '🍽️ منوی رستوران',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: isDark
-                                ? AppColors.darkText
-                                : AppColors.lightText,
-                          ),
-                        ),
-                        Text(
-                          'بهترین غذاها در یک کلیک',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
+              title: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder:
+                    (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.15),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
                     ),
+                  );
+                },
+                child: _showSearch
+                    ? _SearchField(
+                        key: const ValueKey('search'),
+                        controller: _searchController,
+                        isDark: isDark,
+                        onChanged: (q) =>
+                            context.read<HomeProvider>().setSearchQuery(q),
+                        onClose: _toggleSearch,
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                            right: 38), // ← فاصله‌ی جدید برای جلوگیری از هم‌پوشانی
+                        child: Column(
+                          key: const ValueKey('title'),
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '🍽️ منوی رستوران',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: isDark
+                                    ? AppColors.darkText
+                                    : AppColors.lightText,
+                              ),
+                            ),
+                            Text(
+                              'بهترین غذاها در یک کلیک',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
             ),
+            // ⬅️ actions: جستجو + نوتیفیکیشن
             actions: _showSearch
                 ? []
                 : [
                     IconButton(
                       icon: Icon(Icons.search_rounded,
-                          color: isDark
-                              ? AppColors.darkText
-                              : AppColors.lightText),
+                          color:
+                              isDark ? AppColors.darkText : AppColors.lightText),
                       onPressed: _toggleSearch,
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 8),
                       child: GestureDetector(
-                        onTap: () => Scaffold.of(context).openDrawer(),
+                        onTap: () {
+                          // TODO: عملکرد نوتیفیکیشن
+                        },
                         child: Container(
                           width: 36,
                           height: 36,
@@ -121,8 +200,7 @@ class _HomeViewState extends State<_HomeView> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Center(
-                            child:
-                                Icon(Icons.menu_rounded,),
+                            child: Icon(Icons.notifications_rounded),
                           ),
                         ),
                       ),
@@ -131,10 +209,16 @@ class _HomeViewState extends State<_HomeView> {
                   ],
           ),
 
-          // ── بنر (مخفی میشه موقع سرچ) ──
+          // ── بنر تبلیغاتی با انیمیشن Fade + Scale ──
           if (!_showSearch)
             SliverToBoxAdapter(
-              child: _PromoBanner(isDark: isDark),
+              child: FadeTransition(
+                opacity: _bannerOpacityAnimation,
+                child: ScaleTransition(
+                  scale: _bannerOpacityAnimation,
+                  child: _PromoBanner(isDark: isDark),
+                ),
+              ),
             ),
 
           // ── تب‌های کتگوری (Sticky) ──
@@ -156,11 +240,13 @@ class _HomeViewState extends State<_HomeView> {
 // ── فیلد سرچ داخل AppBar ──
 class _SearchField extends StatelessWidget {
   const _SearchField({
+    super.key,
     required this.controller,
     required this.isDark,
     required this.onChanged,
     required this.onClose,
   });
+
   final TextEditingController controller;
   final bool isDark;
   final ValueChanged<String> onChanged;
@@ -216,7 +302,6 @@ class _SearchField extends StatelessWidget {
 // ── بنر تبلیغاتی ──
 class _PromoBanner extends StatelessWidget {
   const _PromoBanner({required this.isDark});
-
   final bool isDark;
 
   @override
@@ -243,12 +328,9 @@ class _PromoBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            // تیره کردن تصویر
             Container(
               color: Colors.black.withValues(alpha: 0.10),
             ),
-
-            // Glow نارنجی بالا چپ
             Positioned(
               left: -40,
               top: -30,
@@ -260,19 +342,11 @@ class _PromoBanner extends StatelessWidget {
                   color: Colors.orange.withValues(alpha: 0.18),
                 ),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: 0,
-                    sigmaY: 0,
-                  ),
+                  filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
                   child: const SizedBox(),
                 ),
               ),
             ),
-
-            
-           
-
-            // کارت شیشه‌ای
             Positioned(
               right: 12,
               top: 12,
@@ -280,10 +354,7 @@ class _PromoBanner extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: 4,
-                    sigmaY: 2,
-                  ),
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 2),
                   child: Container(
                     width: 150,
                     padding: const EdgeInsets.all(14),
@@ -291,9 +362,8 @@ class _PromoBanner extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        width: 1.5,
-                      ),
+                          color: Colors.white.withValues(alpha: 0.4),
+                          width: 1.5),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.15),
@@ -333,8 +403,6 @@ class _PromoBanner extends StatelessWidget {
                 ),
               ),
             ),
-
-            // تصویر کباب
             Positioned(
               left: 10,
               top: 0,
@@ -350,10 +418,10 @@ class _PromoBanner extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Image.asset('assets/images/soda.png'
-                  ,scale: 22,
-                  
-                  )
+                  child: Image.asset(
+                    'assets/images/soda.png',
+                    scale: 22,
+                  ),
                 ),
               ),
             ),
