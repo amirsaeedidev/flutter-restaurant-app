@@ -10,7 +10,7 @@ import 'features/orders/providers/orders_provider.dart';
 import 'features/profile/providers/profile_provider.dart';
 import 'features/auth/screens/onboarding.dart';
 import 'shared/providers/navigation_provider.dart';
-
+import 'features/address/providers/address_provider.dart';
 void main() {
   runApp(
     MultiProvider(
@@ -23,6 +23,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LoyaltyProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => DiscountProvider()),
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
       ],
       child: const MyApp(),
     ),
