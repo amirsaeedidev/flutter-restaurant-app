@@ -1,9 +1,9 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/model/user_model.dart';
 import '../../address/providers/address_provider.dart';
 import '../../address/screens/address_screen.dart';
 import '../../discount/providers/discount_provider.dart';
@@ -13,6 +13,7 @@ import '../../loyalty/screens/loyalty_screen.dart';
 import '../../support/screens/support_screen.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/edit_profile_sheet.dart';
+import '../screens/profile_screen.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -72,7 +73,19 @@ class _CustomDrawerState extends State<CustomDrawer>
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _ProfileHeader(user: user, isDark: isDark),
+                  GestureDetector(
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      _route(const ProfileScreen()),
+    );
+  },
+  child: _ProfileHeader(
+    user: user,
+    isDark: isDark,
+  ),
+),
                   Positioned(
                     bottom: -30,
                     left: 16,
@@ -95,7 +108,7 @@ class _CustomDrawerState extends State<CustomDrawer>
                         icon: Icons.stars_rounded,
                         label: 'باشگاه مشترکین',
                         trailing: Consumer<LoyaltyProvider>(
-                          builder: (_, loyalty, __) => _PointsBadge(
+                          builder: (_, loyalty, _) => _PointsBadge(
                             points: loyalty.formatPoints(loyalty.points),
                           ),
                         ),
@@ -241,9 +254,9 @@ class _CustomDrawerState extends State<CustomDrawer>
   // مسیر با Fade+Slide انیمیشن
   PageRouteBuilder _route(Widget page) {
     return PageRouteBuilder(
-      pageBuilder: (_, __, ___) => page,
+      pageBuilder: (_, _, _) => page,
       transitionDuration: const Duration(milliseconds: 350),
-      transitionsBuilder: (_, anim, __, child) {
+      transitionsBuilder: (_, anim, _, child) {
         final fade = CurvedAnimation(parent: anim, curve: Curves.easeIn);
         final slide = Tween<Offset>(
           begin: const Offset(0.05, 0),
@@ -334,7 +347,7 @@ class _AnimItem extends StatelessWidget {
 // ── هدر پروفایل (بازطراحی‌شده) ──
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user, required this.isDark});
-  final user;
+  final UserModel user;
   final bool isDark;
 
   @override
@@ -376,7 +389,7 @@ class _ProfileHeader extends StatelessWidget {
 
           // نشان امتیاز (مستقیم زیر آواتار)
           Consumer<LoyaltyProvider>(
-            builder: (_, loyalty, __) => _PremiumPointsBadge(
+            builder: (_, loyalty, _) => _PremiumPointsBadge(
               points: loyalty.formatPoints(loyalty.points),
             ),
           ),
@@ -453,17 +466,26 @@ class _EditProfileCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => ChangeNotifierProvider.value(
-              value: context.read<ProfileProvider>(),
-              child: const EditProfileSheet(),
-            ),
-          );
-        },
+        onTap: () async {
+  final result = await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => ChangeNotifierProvider.value(
+      value: context.read<ProfileProvider>(),
+      child: const EditProfileSheet(),
+    ),
+  );
+
+  if (context.mounted && result == true) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProfileScreen(),
+      ),
+    );
+  }
+},
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(

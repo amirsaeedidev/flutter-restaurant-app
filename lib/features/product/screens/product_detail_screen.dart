@@ -207,7 +207,7 @@ class _HeroSection extends StatelessWidget {
           
           left: 16,
           right: 16,
-          bottom: -40,
+          bottom: 5,
           child: FadeTransition(
             opacity: fadeAnimation,
             child: SlideTransition(
@@ -264,57 +264,68 @@ class _FloatingProductCard extends StatelessWidget {
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Badges row
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (product.isPopular)
-                    _GlassBadge(
-                      icon: Icons.local_fire_department_rounded,
-                      label: 'پرطرفدار',
-                      color: Colors.deepOrange,
-                      isDark: isDark,
-                    ),
-                  _GlassBadge(
-                    icon: Icons.star_rounded,
-                    label: product.rating.toStringAsFixed(1),
-                    color: AppColors.secondary,
-                    isDark: isDark,
-                  ),
-                  _GlassBadge(
-                    icon: Icons.reviews_rounded,
-                    label: '${product.reviewCount} نظر',
-                    color: subColor,
-                    isDark: isDark,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Title
-              Text(
-                product.name,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Price
-              Text(
-                '${_formatPrice(product.price)} تومان',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    // Title
+    Text(
+      product.name,
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+        color: textColor,
+        height: 1.3,
+      ),
+    ),
+
+    const SizedBox(height: 16),
+
+    Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Price
+        Expanded(
+          child: Text(
+            '${_formatPrice(product.price)} تومان',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
+            ),
           ),
+        ),
+
+        // Badges
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (product.isPopular)
+              _GlassBadge(
+                icon: Icons.local_fire_department_rounded,
+                label: 'پرطرفدار',
+                color: Colors.deepOrange,
+                isDark: isDark,
+              ),
+
+            _GlassBadge(
+              icon: Icons.star_rounded,
+              label: product.rating.toStringAsFixed(1),
+              color: AppColors.secondary,
+              isDark: isDark,
+            ),
+
+            _GlassBadge(
+              icon: Icons.reviews_rounded,
+              label: '${product.reviewCount}',
+              color: subColor,
+              isDark: isDark,
+            ),
+          ],
+        ),
+      ],
+    ),
+  ],
+)
         ),
       ),
     );
@@ -519,35 +530,55 @@ class _ContentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-         
-          Text(
-            'درباره این غذا',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.darkText : AppColors.lightText,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            product.description,
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.8,
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 28),
-          _ReviewSection(product: product, isDark: isDark),
-        ],
+    return Transform.translate(
+  offset: const Offset(0, -24),
+  child: Container(
+    decoration: BoxDecoration(
+      color: isDark
+          ? AppColors.darkSurface
+          : Colors.white,
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(32),
+        topRight: Radius.circular(32),
       ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 20,
+          offset: const Offset(0, -4),
+        ),
+      ],
+    ),
+    
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'درباره این غذا',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkText : AppColors.lightText,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              product.description,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.8,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 28),
+            _ReviewSection(product: product, isDark: isDark),
+          ],
+        ),
+      ),),
     );
   }
 }
