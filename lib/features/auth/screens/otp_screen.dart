@@ -156,22 +156,6 @@ class _OtpScreenState extends State<OtpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
-
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Center(
-                    child: Text('📱', style: TextStyle(fontSize: 36)),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
                 Text(
                   'کد تأیید',
                   style: TextStyle(
@@ -182,8 +166,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
                 const SizedBox(height: 8),
                 RichText(
+                  textAlign: TextAlign.center,
                   text: TextSpan(
                     style: TextStyle(
+                      fontFamily: 'Lalezar',
                       fontSize: 14,
                       height: 1.6,
                       color: isDark
@@ -195,6 +181,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       TextSpan(
                         text: widget.phone,
                         style: const TextStyle(
+                          fontFamily: 'Lalezar',
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1,
@@ -204,39 +191,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 12),
-
-                // راهنمای Mock
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.secondary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text('💡', style: TextStyle(fontSize: 14)),
-                      SizedBox(width: 6),
-                      Text(
-                        'کد آزمایشی:  1234',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.secondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 36),
+                SizedBox(height: 20),
 
                 // ── ۴ باکس OTP ──
                 Directionality(
@@ -328,13 +283,24 @@ class _OtpScreenState extends State<OtpScreen> {
                         : const Text(
                             'تأیید و ورود',
                             style: TextStyle(
+                              color: AppColors.lightText,
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                   ),
                 ),
+               
+                Center(
+
+                  child: Image.asset('assets/images/massege.png',fit: BoxFit.contain,
+                  height: 240,
+                  
+                  
+                  ),
+                ),
               ],
+              
             ),
           ),
         ),

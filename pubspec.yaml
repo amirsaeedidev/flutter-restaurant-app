@@ -75,7 +75,7 @@ flutter:
     - assets/images/baner.png
     - assets/images/soda.png
     - assets/images/hamber.png
-    
+    - assets/images/massege.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

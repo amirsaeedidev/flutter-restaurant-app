@@ -376,7 +376,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
             ),
             child: AnimatedBuilder(
               animation: _anim,
-              builder: (_, __) => Row(
+              builder: (_, _) => Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(3, (i) {
                   final delay = i * 0.3;

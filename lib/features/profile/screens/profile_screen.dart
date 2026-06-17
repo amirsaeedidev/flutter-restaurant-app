@@ -359,7 +359,7 @@ class _LoyaltyCard extends StatelessWidget {
                   tween: Tween(begin: 0, end: loyalty.progress),
                   duration: const Duration(milliseconds: 900),
                   curve: Curves.easeOutCubic,
-                  builder: (_, v, __) => LinearProgressIndicator(
+                  builder: (_, v, _) => LinearProgressIndicator(
                     value: v,
                     minHeight: 7,
                     backgroundColor: Colors.white24,
