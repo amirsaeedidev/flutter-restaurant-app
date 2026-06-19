@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.0
-  supabase_flutter: ^2.0.0
+ 
   intl:
   uuid:
   cached_network_image:
