@@ -11,10 +11,19 @@ import 'features/profile/providers/profile_provider.dart';
 import 'features/auth/screens/onboarding.dart';
 import 'shared/providers/navigation_provider.dart';
 import 'features/address/providers/address_provider.dart';
-void main() {
+import 'core/services/supabase_service.dart'; // ← اضافه شد
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // برای dotenv.load لازم است
+import 'features/home/providers/home_provider.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  await SupabaseService.initialize(); // ← راه‌اندازی Supabase
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
@@ -73,7 +82,6 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
         ),
       ),
-      // SplashScreen نقطه شروع — خودش تصمیم میگیره کجا بره
       home: const SplashScreen(),
     );
   }

@@ -1,3 +1,17 @@
+class CategoryModel {
+  final String id;
+  final String name;
+  final String imageUrl;
+  final int loyaltyPointsPerItem; // از جدول categories.loyalty_points_per_item
+
+  const CategoryModel({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+    this.loyaltyPointsPerItem = 0,
+  });
+}
+
 class ProductModel {
   final String id;
   final String name;
@@ -19,18 +33,5 @@ class ProductModel {
     required this.reviewCount,
     required this.isPopular,
     required this.categoryId,
-  });
-}
-
-class CategoryModel {
-  final String id;
-  final String name;
-  
-  final String imageUrl;
-
-  const CategoryModel({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
   });
 }
