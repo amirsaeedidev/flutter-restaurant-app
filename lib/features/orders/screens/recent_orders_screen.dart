@@ -28,41 +28,135 @@ class _Body extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<OrdersProvider>();
 
+    // تعریف رنگ‌ها برای استفاده آسان‌تر
+    final backgroundColor =
+        isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final surfaceColor =
+        isDark ? const Color(0xFF1E1E1E) : Colors.white; // رنگ کارت‌ها و تب‌ها
+    final primaryColor = AppColors.primary;
+    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final textSecondaryColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: backgroundColor,
+        // استفاده از appBar شفاف برای اعمال سایه سفارشی
         appBar: AppBar(
-          backgroundColor:
-              isDark ? AppColors.darkBackground : AppColors.lightBackground,
+          backgroundColor: Colors.transparent,
           elevation: 0,
           automaticallyImplyLeading: false,
-          title: Text(
-            'سفارشات',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: isDark ? AppColors.darkText : AppColors.lightText,
+          // flexibleSpace برای اعمال پس‌زمینه رنگی بهAppBar اصلی
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha:0.3)
+                      : Colors.black.withValues(alpha:0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16, left: 16, top: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'سفارشات',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
             ),
           ),
-          bottom: TabBar(
-            labelColor: AppColors.primary,
-            unselectedLabelColor: isDark
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w700),
-            tabs: [
-              Tab(
-                text: provider.activeOrders.isEmpty
-                    ? 'فعال'
-                    : 'فعال (${provider.activeOrders.length})',
+          // بخش پایین که شامل تب‌ها است را در کانتینر جداگانه با سایه قرار می‌دهیم
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              color: backgroundColor,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withValues(alpha:0.2)
+                          : Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  labelColor: primaryColor,
+                  unselectedLabelColor: textSecondaryColor,
+                  indicatorColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: isDark
+                        ? primaryColor.withValues(alpha:0.15)
+                        : primaryColor.withValues(alpha:0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  labelStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('فعال'),
+                          if (provider.activeOrders.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${provider.activeOrders.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Tab(text: 'تاریخچه'),
+                  ],
+                ),
               ),
-              const Tab(text: 'تاریخچه'),
-            ],
+            ),
           ),
         ),
         body: TabBarView(
@@ -72,16 +166,22 @@ class _Body extends StatelessWidget {
               orders: provider.activeOrders,
               emptyEmoji: '🍽️',
               emptyTitle: 'سفارش فعالی نداری',
-              emptySubtitle: 'از منو سفارش بده 😋',
+              emptySubtitle: 'یه نگاه به منو بنداز و خوشمزه‌ترین غذا رو انتخاب کن 😋',
               isDark: isDark,
+              surfaceColor: surfaceColor,
+              textColor: textColor,
+              textSecondaryColor: textSecondaryColor,
             ),
             // ── تب تاریخچه ──
             _OrderList(
               orders: provider.historyOrders,
               emptyEmoji: '📋',
               emptyTitle: 'هنوز سفارشی نداری',
-              emptySubtitle: 'اولین سفارشت رو ثبت کن!',
+              emptySubtitle: 'اولین تجربه غذایی خوشمزه رو همین الان شروع کن!',
               isDark: isDark,
+              surfaceColor: surfaceColor,
+              textColor: textColor,
+              textSecondaryColor: textSecondaryColor,
             ),
           ],
         ),
@@ -97,6 +197,9 @@ class _OrderList extends StatelessWidget {
     required this.emptyTitle,
     required this.emptySubtitle,
     required this.isDark,
+    required this.surfaceColor,
+    required this.textColor,
+    required this.textSecondaryColor,
   });
 
   final List orders;
@@ -104,43 +207,84 @@ class _OrderList extends StatelessWidget {
   final String emptyTitle;
   final String emptySubtitle;
   final bool isDark;
+  final Color surfaceColor;
+  final Color textColor;
+  final Color textSecondaryColor;
 
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emptyEmoji, style: const TextStyle(fontSize: 60)),
-            const SizedBox(height: 16),
-            Text(
-              emptyTitle,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: isDark ? AppColors.darkText : AppColors.lightText,
-              ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha:0.3)
+                      : Colors.black.withValues(alpha:0.03),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              emptySubtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // افکت نرم برای ایموجی
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha:0.05)
+                        : AppColors.primary.withValues(alpha:0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    emptyEmoji,
+                    style: const TextStyle(fontSize: 50),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  emptyTitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  emptySubtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textSecondaryColor,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100), // فاصله بالاتر برای زیبایی
+      physics: const BouncingScrollPhysics(), // اسکرول نرم‌تر
       itemCount: orders.length,
-      itemBuilder: (_, i) => OrderHistoryCard(order: orders[i]),
+      itemBuilder: (_, i) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: OrderHistoryCard(order: orders[i]),
+      ),
     );
   }
 }
