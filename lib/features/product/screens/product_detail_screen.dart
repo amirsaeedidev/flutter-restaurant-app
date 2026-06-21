@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/product_model.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/image_utils.dart'; // ← اضافه شد
+import '../../../core/utils/image_utils.dart';
 import '../../cart_and_checkout/providers/cart_provider.dart';
-import '../../../shared/providers/navigation_provider.dart';
+import '../../cart_and_checkout/screens/cart_screen.dart'; // ← اضافه شد
+//import '../../../shared/providers/navigation_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
@@ -78,9 +79,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           children: [
             CustomScrollView(
               slivers: [
-                // Hero area with floating info card
                 SliverAppBar(
-                  clipBehavior: Clip.none, 
+                  clipBehavior: Clip.none,
                   expandedHeight: 340,
                   pinned: false,
                   floating: false,
@@ -99,7 +99,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     ),
                   ),
                 ),
-                // Content (description + reviews) without card overlap
                 SliverToBoxAdapter(
                   child: FadeTransition(
                     opacity: _fadeAnimation,
@@ -112,12 +111,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     ),
                   ),
                 ),
-                // Bottom padding for bottom bar
                 const SliverToBoxAdapter(child: SizedBox(height: 90)),
               ],
             ),
-
-            // Custom glassmorphism snackbar
             if (_showAddedSnackbar)
               Positioned(
                 bottom: 90,
@@ -164,16 +160,12 @@ class _HeroSection extends StatelessWidget {
       clipBehavior: Clip.none,
       fit: StackFit.expand,
       children: [
-        // ── تغییر اصلی اینجاست ──
         buildImage(
           product.imageUrl,
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
-          // placeholderAsset به‌صورت پیش‌فرض 'assets/images/food.jpg' است
         ),
-
-        // Gradient overlay at bottom
         Positioned(
           left: 0,
           right: 0,
@@ -195,8 +187,6 @@ class _HeroSection extends StatelessWidget {
             ),
           ),
         ),
-
-        // Floating Glass Card
         Positioned(
           left: 16,
           right: 16,
@@ -259,7 +249,6 @@ class _FloatingProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
               Text(
                 product.name,
                 style: TextStyle(
@@ -273,7 +262,6 @@ class _FloatingProductCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Price
                   Expanded(
                     child: Text(
                       '${_formatPrice(product.price)} تومان',
@@ -284,7 +272,6 @@ class _FloatingProductCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Badges
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -384,7 +371,7 @@ class _GlassBadge extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────
-// Premium Glass Notification (replaces SnackBar)
+// Premium Glass Notification
 // ─────────────────────────────────────────────────────
 class _PremiumNotification extends StatefulWidget {
   const _PremiumNotification({
@@ -522,9 +509,7 @@ class _ContentSection extends StatelessWidget {
       offset: const Offset(0, -24),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkSurface
-              : Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
@@ -578,7 +563,6 @@ class _ReviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // static sample reviews (could come from backend)
     final reviews = [
       (name: 'علی رضایی', stars: 5, text: 'عالی بود! کیفیت گوشت فوق‌العاده.'),
       (name: 'مریم احمدی', stars: 4, text: 'خوشمزه، فقط کمی دیر رسید.'),
@@ -702,7 +686,7 @@ class _ReviewCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────
-// Floating Bottom Bar (Glassmorphism, Material 3)
+// Floating Bottom Bar
 // ─────────────────────────────────────────────────────
 class _FloatingBottomBar extends StatelessWidget {
   const _FloatingBottomBar({
@@ -1001,7 +985,7 @@ class _AddToCartSheetState extends State<_AddToCartSheet> {
 }
 
 // ─────────────────────────────────────────────────────
-// Back Button & Cart Badge
+// Back Button & Cart Badge (اصلاح‌شده)
 // ─────────────────────────────────────────────────────
 class _BackButton extends StatelessWidget {
   const _BackButton({required this.isDark});
@@ -1027,7 +1011,7 @@ class _BackButton extends StatelessWidget {
             ],
           ),
           child: Icon(
-            Icons.arrow_forward_rounded,
+            Icons.arrow_back_rounded, // ← تغییر: از arrow_forward به arrow_back
             color: isDark ? AppColors.darkText : AppColors.lightText,
             size: 22,
           ),
@@ -1047,7 +1031,13 @@ class _CartBadgeButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: GestureDetector(
-        onTap: () => context.read<NavigationProvider>().setIndex(0),
+        onTap: () {
+          // ── تغییر: رفتن به صفحه سبد خرید ──
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CartScreen()),
+          );
+        },
         child: Stack(
           children: [
             Container(
