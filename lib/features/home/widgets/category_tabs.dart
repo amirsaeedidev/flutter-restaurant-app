@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/image_utils.dart'; // ← اضافه شد
 import '../providers/home_provider.dart';
 
 class CategoryTabs extends StatelessWidget {
@@ -16,16 +17,14 @@ class CategoryTabs extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        // جهت RTL: آیتم‌ها از راست شروع میشن
         reverse: true,
-        itemCount: provider.categories.length + 1, // +۱ برای دکمه «همه»
+        itemCount: provider.categories.length + 1,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          // اولین آیتم (در RTL آخرین سمت راست) = «همه»
           if (index == provider.categories.length) {
             return _CategoryChip(
-               label: 'همه',
-  imagePath: 'assets/images/all.png',
+              label: 'همه',
+              imagePath: 'assets/images/all.png',
               isSelected: provider.selectedCategoryId == null,
               onTap: () => provider.selectCategory(null),
               isDark: isDark,
@@ -35,7 +34,7 @@ class CategoryTabs extends StatelessWidget {
           final category = provider.categories[index];
           return _CategoryChip(
             label: category.name,
-            imagePath: category.imageUrl,
+            imagePath: category.imageUrl, // ← این یک URL اینترنتی است
             isSelected: provider.selectedCategoryId == category.id,
             onTap: () => provider.selectCategory(category.id),
             isDark: isDark,
@@ -95,24 +94,23 @@ class _CategoryChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-  imagePath,
-  width: 20,
-  height: 20,
-  fit: BoxFit.contain,
-),
+            // ── تغییر اصلی اینجاست ──
+            buildImage(
+              imagePath, // ← این می‌تواند URL یا Asset باشد
+              width: 20,
+              height: 20,
+              fit: BoxFit.contain,
+              placeholderAsset: 'assets/images/all.png', // ← برای دسته‌بندی‌ها
+            ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
                     ? Colors.white
-                    : (isDark
-                        ? AppColors.darkText
-                        : AppColors.lightText),
+                    : (isDark ? AppColors.darkText : AppColors.lightText),
               ),
             ),
           ],
