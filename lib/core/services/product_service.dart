@@ -1,78 +1,90 @@
-import '../../core/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../model/product_model.dart';
+import '../services/supabase_service.dart';
 
 class ProductService {
   static final _client = SupabaseService.client;
 
-  /// همه محصولات فعال
   static Future<List<ProductModel>> getProducts() async {
-    final res = await _client
-        .from('products')
-        .select('''
-          id, name, description, price, image_url,
-          rating, review_count, is_popular, category_id
-        ''')
-        .eq('is_active', true)
-        .order('created_at', ascending: false);
+    try {
+      final res = await _client
+          .from('products')
+          .select(
+              'id, name, description, price, image_url, rating, review_count, is_popular, category_id')
+          .eq('is_active', true)
+          .order('created_at', ascending: false);
 
-    return (res as List)
-        .map((row) => _fromRow(row as Map<String, dynamic>))
-        .toList();
+      return (res as List)
+          .map((row) => _fromRow(row as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception('خطا در دریافت محصولات: ${e.message}');
+    } catch (e) {
+      throw Exception('خطای غیرمنتظره: $e');
+    }
   }
 
-  /// محصولات یک کتگوری خاص
   static Future<List<ProductModel>> getProductsByCategory(
       String categoryId) async {
-    final res = await _client
-        .from('products')
-        .select('''
-          id, name, description, price, image_url,
-          rating, review_count, is_popular, category_id
-        ''')
-        .eq('category_id', categoryId)
-        .eq('is_active', true)
-        .order('created_at', ascending: false);
+    try {
+      final res = await _client
+          .from('products')
+          .select(
+              'id, name, description, price, image_url, rating, review_count, is_popular, category_id')
+          .eq('category_id', categoryId)
+          .eq('is_active', true)
+          .order('created_at', ascending: false);
 
-    return (res as List)
-        .map((row) => _fromRow(row as Map<String, dynamic>))
-        .toList();
+      return (res as List)
+          .map((row) => _fromRow(row as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception('خطا در دریافت محصولات کتگوری: ${e.message}');
+    } catch (e) {
+      throw Exception('خطای غیرمنتظره: $e');
+    }
   }
 
-  /// محصولات پرطرفدار
   static Future<List<ProductModel>> getPopularProducts() async {
-    final res = await _client
-        .from('products')
-        .select('''
-          id, name, description, price, image_url,
-          rating, review_count, is_popular, category_id
-        ''')
-        .eq('is_popular', true)
-        .eq('is_active', true)
-        .order('rating', ascending: false)
-        .limit(10);
+    try {
+      final res = await _client
+          .from('products')
+          .select(
+              'id, name, description, price, image_url, rating, review_count, is_popular, category_id')
+          .eq('is_popular', true)
+          .eq('is_active', true)
+          .order('rating', ascending: false)
+          .limit(10);
 
-    return (res as List)
-        .map((row) => _fromRow(row as Map<String, dynamic>))
-        .toList();
+      return (res as List)
+          .map((row) => _fromRow(row as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception('خطا در دریافت محصولات پرطرفدار: ${e.message}');
+    } catch (e) {
+      throw Exception('خطای غیرمنتظره: $e');
+    }
   }
 
-  /// جستجوی محصول با نام
   static Future<List<ProductModel>> searchProducts(String query) async {
-    final res = await _client
-        .from('products')
-        .select('''
-          id, name, description, price, image_url,
-          rating, review_count, is_popular, category_id
-        ''')
-        .ilike('name', '%$query%')
-        .eq('is_active', true);
+    try {
+      final res = await _client
+          .from('products')
+          .select(
+              'id, name, description, price, image_url, rating, review_count, is_popular, category_id')
+          .ilike('name', '%$query%')
+          .eq('is_active', true);
 
-    return (res as List)
-        .map((row) => _fromRow(row as Map<String, dynamic>))
-        .toList();
+      return (res as List)
+          .map((row) => _fromRow(row as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception('خطا در جستجو: ${e.message}');
+    } catch (e) {
+      throw Exception('خطای غیرمنتظره: $e');
+    }
   }
 
-  // ── mapper ──
   static ProductModel _fromRow(Map<String, dynamic> r) => ProductModel(
         id: r['id'] as String,
         name: r['name'] as String,

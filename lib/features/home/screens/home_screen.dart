@@ -77,6 +77,35 @@ class _HomeViewState extends State<_HomeView> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final provider = context.watch<HomeProvider>();
+
+    // ── Loading ──
+    if (provider.loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ── Error ──
+    if (provider.error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('⚠️', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(provider.error!, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.read<HomeProvider>().refresh(),
+                child: const Text('تلاش مجدد'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: CustomScrollView(
