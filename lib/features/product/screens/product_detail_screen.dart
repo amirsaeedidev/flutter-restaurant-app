@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/product_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/image_utils.dart'; // ← اضافه شد
 import '../../cart_and_checkout/providers/cart_provider.dart';
 import '../../../shared/providers/navigation_provider.dart';
 
@@ -163,20 +164,13 @@ class _HeroSection extends StatelessWidget {
       clipBehavior: Clip.none,
       fit: StackFit.expand,
       children: [
-        // Image
-        Image.asset(
+        // ── تغییر اصلی اینجاست ──
+        buildImage(
           product.imageUrl,
+          width: double.infinity,
+          height: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
-            child: const Center(
-              child: Icon(
-                Icons.image_outlined,
-                size: 80,
-                color: Colors.grey,
-              ),
-            ),
-          ),
+          // placeholderAsset به‌صورت پیش‌فرض 'assets/images/food.jpg' است
         ),
 
         // Gradient overlay at bottom
@@ -204,7 +198,6 @@ class _HeroSection extends StatelessWidget {
 
         // Floating Glass Card
         Positioned(
-          
           left: 16,
           right: 16,
           bottom: 5,
@@ -264,68 +257,63 @@ class _FloatingProductCard extends StatelessWidget {
             ],
           ),
           child: Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Title
-    Text(
-      product.name,
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w800,
-        color: textColor,
-        height: 1.3,
-      ),
-    ),
-
-    const SizedBox(height: 16),
-
-    Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Price
-        Expanded(
-          child: Text(
-            '${_formatPrice(product.price)} تومان',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-
-        // Badges
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            if (product.isPopular)
-              _GlassBadge(
-                icon: Icons.local_fire_department_rounded,
-                label: 'پرطرفدار',
-                color: Colors.deepOrange,
-                isDark: isDark,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Text(
+                product.name,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                  height: 1.3,
+                ),
               ),
-
-            _GlassBadge(
-              icon: Icons.star_rounded,
-              label: product.rating.toStringAsFixed(1),
-              color: AppColors.secondary,
-              isDark: isDark,
-            ),
-
-            _GlassBadge(
-              icon: Icons.reviews_rounded,
-              label: '${product.reviewCount}',
-              color: subColor,
-              isDark: isDark,
-            ),
-          ],
-        ),
-      ],
-    ),
-  ],
-)
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Price
+                  Expanded(
+                    child: Text(
+                      '${_formatPrice(product.price)} تومان',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  // Badges
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (product.isPopular)
+                        _GlassBadge(
+                          icon: Icons.local_fire_department_rounded,
+                          label: 'پرطرفدار',
+                          color: Colors.deepOrange,
+                          isDark: isDark,
+                        ),
+                      _GlassBadge(
+                        icon: Icons.star_rounded,
+                        label: product.rating.toStringAsFixed(1),
+                        color: AppColors.secondary,
+                        isDark: isDark,
+                      ),
+                      _GlassBadge(
+                        icon: Icons.reviews_rounded,
+                        label: '${product.reviewCount}',
+                        color: subColor,
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -531,54 +519,54 @@ class _ContentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-  offset: const Offset(0, -24),
-  child: Container(
-    decoration: BoxDecoration(
-      color: isDark
-          ? AppColors.darkSurface
-          : Colors.white,
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(32),
-        topRight: Radius.circular(32),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 20,
-          offset: const Offset(0, -4),
-        ),
-      ],
-    ),
-    
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'درباره این غذا',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.darkText : AppColors.lightText,
-              ),
+      offset: const Offset(0, -24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkSurface
+              : Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
             ),
-            const SizedBox(height: 12),
-            Text(
-              product.description,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.8,
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
-            ),
-            const SizedBox(height: 28),
-            _ReviewSection(product: product, isDark: isDark),
           ],
         ),
-      ),),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'درباره این غذا',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                product.description,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.8,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 28),
+              _ReviewSection(product: product, isDark: isDark),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
