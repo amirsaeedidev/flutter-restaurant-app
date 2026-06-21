@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/product_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/image_utils.dart'; // ← اضافه شد
 import '../../cart_and_checkout/providers/cart_provider.dart';
 import '../../product/screens/product_detail_screen.dart';
 import '../providers/home_provider.dart';
@@ -38,7 +39,7 @@ class ProductGrid extends StatelessWidget {
           crossAxisCount: 2,
           mainAxisSpacing: 14,
           crossAxisSpacing: 14,
-          childAspectRatio: 0.72, // نسبت ارتفاع/عرض کارت
+          childAspectRatio: 0.72,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) => _ProductCard(product: products[index]),
@@ -53,9 +54,6 @@ class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
   final ProductModel product;
 
-
-
-  // قالب‌بندی قیمت به تومان با جداکننده هزارگان
   String _formatPrice(int price) {
     final str = price.toString();
     final buffer = StringBuffer();
@@ -93,25 +91,19 @@ class _ProductCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Placeholder تصویر (چون imageUrl خالیه)
+                  // ── تغییر اصلی اینجاست ──
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
-                    child: product.imageUrl.startsWith('http')
-                        ? Image.network(
-                            product.imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          )
-                        : Image.asset(
-                            product.imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
+                    child: buildImage(
+                      product.imageUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      // placeholderAsset به‌صورت پیش‌فرض 'assets/images/food.jpg' است
+                    ),
                   ),
                   // بج «پرطرفدار»
                   if (product.isPopular)
@@ -149,7 +141,6 @@ class _ProductCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // نام محصول
                     Text(
                       product.name,
                       maxLines: 2,
@@ -165,7 +156,6 @@ class _ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    // ستاره + تعداد نظر
                     Row(
                       children: [
                         const Icon(
@@ -197,7 +187,6 @@ class _ProductCard extends StatelessWidget {
 
                     const Spacer(),
 
-                    // قیمت + دکمه افزودن
                     Row(
                       children: [
                         Expanded(
