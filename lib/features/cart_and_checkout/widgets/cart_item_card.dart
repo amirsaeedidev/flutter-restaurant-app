@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/cart_item_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/image_utils.dart';
 import '../../cart_and_checkout/providers/cart_provider.dart';
 
 class CartItemCard extends StatelessWidget {
@@ -41,21 +42,14 @@ class CartItemCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── تصویر / ایموجی ──
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : AppColors.primary.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                _emojiForCategory(item.product.categoryId),
-                style: const TextStyle(fontSize: 32),
-              ),
+          // ── تصویر محصول ──
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: buildImage(
+              item.product.imageUrl,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 12),
@@ -78,12 +72,14 @@ class CartItemCard extends StatelessWidget {
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           height: 1.4,
-                          color: isDark ? AppColors.darkText : AppColors.lightText,
+                          color: isDark
+                              ? AppColors.darkText
+                              : AppColors.lightText,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // دکمه حذف
+                    // دکمه حذف کامل
                     GestureDetector(
                       onTap: () => _confirmDelete(context, cart),
                       child: Container(
@@ -103,7 +99,7 @@ class CartItemCard extends StatelessWidget {
                   ],
                 ),
 
-                // توضیحات آیتم (اگه داشت)
+                // توضیحات آیتم
                 if (item.note.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -133,13 +129,10 @@ class CartItemCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // کنترل − عدد +
                     _QuantityRow(
                       quantity: item.quantity,
-                      onDecrement: () =>
-                          cart.decrement(item.product.id),
-                      onIncrement: () =>
-                          cart.increment(item.product.id),
+                      onDecrement: () => cart.decrement(item.product.id),
+                      onIncrement: () => cart.increment(item.product.id),
                       isDark: isDark,
                     ),
                   ],
@@ -152,18 +145,17 @@ class CartItemCard extends StatelessWidget {
     );
   }
 
-  // دیالوگ تأیید حذف
   void _confirmDelete(BuildContext context, CartProvider cart) {
     showDialog(
       context: context,
       builder: (_) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('حذف از سبد'),
-          content: Text(
-              '«${item.product.name}» از سبد خرید حذف بشه؟'),
+          content: Text('«${item.product.name}» از سبد خرید حذف بشه؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -179,7 +171,8 @@ class CartItemCard extends StatelessWidget {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: const Text('حذف'),
             ),
@@ -187,15 +180,6 @@ class CartItemCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _emojiForCategory(String id) {
-    switch (id) {
-      case '1': return '🍢';
-      case '2': return '🥗';
-      case '3': return '🥤';
-      default:  return '🍽️';
-    }
   }
 }
 
@@ -217,13 +201,17 @@ class _QuantityRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _QBtn(
-          icon: quantity == 1
-              ? Icons.delete_outline_rounded
-              : Icons.remove_rounded,
-          color: quantity == 1 ? Colors.red : null,
-          onTap: onDecrement,
-          isDark: isDark,
+        // ── دکمه کاهش (فقط وقتی quantity > 1 فعال است) ──
+        Opacity(
+          opacity: quantity > 1 ? 1.0 : 0.3,
+          child: IgnorePointer(
+            ignoring: quantity <= 1,
+            child: _QBtn(
+              icon: Icons.remove_rounded,
+              onTap: onDecrement,
+              isDark: isDark,
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -236,6 +224,7 @@ class _QuantityRow extends StatelessWidget {
             ),
           ),
         ),
+        // ── دکمه افزایش (همیشه فعال) ──
         _QBtn(
           icon: Icons.add_rounded,
           onTap: onIncrement,
@@ -263,13 +252,18 @@ class _QBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ── رنگ پس‌زمینه (ایمن‌ترین حالت) ──
     final bg = isPrimary
         ? AppColors.primary
-        : (color != null
-            ? color!.withValues(alpha: 0.1)
-            : (isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.06)));
+        : (color?.withValues(alpha: 0.1) ??
+              (isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.06)));
+
+    // ── رنگ آیکون ──
+    final iconColor = isPrimary
+        ? Colors.white
+        : (color ?? (isDark ? AppColors.darkText : AppColors.lightText));
 
     return GestureDetector(
       onTap: onTap,
@@ -280,13 +274,7 @@ class _QBtn extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: isPrimary
-              ? Colors.white
-              : (color ?? (isDark ? AppColors.darkText : AppColors.lightText)),
-        ),
+        child: Icon(icon, size: 17, color: iconColor),
       ),
     );
   }
