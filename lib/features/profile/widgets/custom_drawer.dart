@@ -1,3 +1,4 @@
+//import 'dart:ffi';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -135,7 +136,7 @@ class _CustomDrawerState extends State<CustomDrawer>
                             _route(
                               ChangeNotifierProvider(
                                 create: (_) => DiscountProvider(),
-                                child: const DiscountScreen(),
+                                child: DiscountScreen(userId: user.id),
                               ),
                             ),
                           );

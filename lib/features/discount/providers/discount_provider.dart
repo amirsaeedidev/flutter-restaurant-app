@@ -1,106 +1,158 @@
+// features/discount/providers/discount_provider.dart
+
 import 'package:flutter/material.dart';
 import '../../../core/model/discount_model.dart';
+import '../../../core/services/discount_service.dart';
+
+/// وضعیت لودینگ Provider
+enum DiscountLoadState { idle, loading, loaded, error }
 
 class DiscountProvider extends ChangeNotifier {
-  // کدهای تخفیف Mock
-  final List<DiscountModel> _discounts = [
-    DiscountModel(
-      id: '1',
-      code: 'FIRST20',
-      title: 'تخفیف اولین سفارش',
-      description: 'برای اولین سفارش از اپ رستوران',
-      type: DiscountType.percent,
-      status: DiscountStatus.active,
-      value: 20,
-      expiresAt: DateTime.now().add(const Duration(days: 30)),
-      emoji: '🎉',
-      minOrderPrice: 100000,
-    ),
-    DiscountModel(
-      id: '2',
-      code: 'MEMBER5',
-      title: 'تخفیف عضویت عادی',
-      description: 'مزیت سطح عضویت عادی باشگاه',
-      type: DiscountType.percent,
-      status: DiscountStatus.active,
-      value: 5,
-      expiresAt: DateTime.now().add(const Duration(days: 90)),
-      emoji: '🥉',
-    ),
-    DiscountModel(
-      id: '3',
-      code: 'WEEKEND15',
-      title: 'تخفیف آخر هفته',
-      description: 'هر آخر هفته از این کد استفاده کن',
-      type: DiscountType.percent,
-      status: DiscountStatus.active,
-      value: 15,
-      expiresAt: DateTime.now().add(const Duration(days: 7)),
-      emoji: '🎊',
-      minOrderPrice: 200000,
-    ),
-    DiscountModel(
-      id: '4',
-      code: 'FREESHIP',
-      title: 'ارسال رایگان',
-      description: 'هزینه ارسال رایگان برای این سفارش',
-      type: DiscountType.fixed,
-      status: DiscountStatus.active,
-      value: 15000,
-      expiresAt: DateTime.now().add(const Duration(days: 14)),
-      emoji: '🛵',
-    ),
-    DiscountModel(
-      id: '5',
-      code: 'SUMMER10',
-      title: 'تخفیف تابستانه',
-      description: 'جشنواره تابستان رستوران',
-      type: DiscountType.percent,
-      status: DiscountStatus.used,
-      value: 10,
-      expiresAt: DateTime.now().subtract(const Duration(days: 5)),
-      emoji: '☀️',
-    ),
-    DiscountModel(
-      id: '6',
-      code: 'NEWYEAR',
-      title: 'تخفیف سال نو',
-      description: 'جشن سال نو مبارک',
-      type: DiscountType.percent,
-      status: DiscountStatus.expired,
-      value: 25,
-      expiresAt: DateTime.now().subtract(const Duration(days: 30)),
-      emoji: '🎆',
-    ),
-  ];
+  // ── State ──
+  List<DiscountModel> _discounts = [];
+  DiscountLoadState _loadState = DiscountLoadState.idle;
+  String? _loadError;
 
+  // ── برای checkout ──
+  DiscountModel? _appliedDiscount;
+  int _discountAmount = 0;
+  bool _isApplying = false;
+  String? _applyError;
+
+  // ── Getters ──
   List<DiscountModel> get all => List.unmodifiable(_discounts);
-
   List<DiscountModel> get active =>
       _discounts.where((d) => d.isActive).toList();
-
   List<DiscountModel> get usedOrExpired =>
       _discounts.where((d) => !d.isActive).toList();
 
-  // اعمال کد دستی
-  String? applyCode(String code) {
-    final match = _discounts.where(
-      (d) => d.code.toLowerCase() == code.toLowerCase(),
-    );
-    if (match.isEmpty) return 'کد تخفیف معتبر نیست';
-    final d = match.first;
-    if (d.isUsed) return 'این کد قبلاً استفاده شده';
-    if (d.isExpired) return 'این کد منقضی شده';
-    return null; // null = موفق
+  DiscountLoadState get loadState => _loadState;
+  bool get isLoading => _loadState == DiscountLoadState.loading;
+  String? get loadError => _loadError;
+
+  DiscountModel? get appliedDiscount => _appliedDiscount;
+  int get discountAmount => _discountAmount;
+  bool get isApplying => _isApplying;
+  String? get applyError => _applyError;
+  bool get hasDiscount => _appliedDiscount != null && _discountAmount > 0;
+
+  // ────────────────────────────────────────────
+  // بارگذاری تخفیف‌ها از Supabase
+  // ────────────────────────────────────────────
+  Future<void> loadDiscounts(String userId) async {
+    // اگه قبلاً لود شده، دوباره لود نکن
+    if (_loadState == DiscountLoadState.loaded) return;
+
+    _loadState = DiscountLoadState.loading;
+    _loadError = null;
+    notifyListeners();
+
+    try {
+      _discounts = await DiscountService.fetchUserDiscounts(userId);
+      _loadState = DiscountLoadState.loaded;
+    } catch (e) {
+      _loadState = DiscountLoadState.error;
+      _loadError = e.toString();
+    }
+
+    notifyListeners();
   }
 
-  DiscountModel? findActive(String code) {
-    try {
-      return _discounts.firstWhere(
-        (d) => d.code.toLowerCase() == code.toLowerCase() && d.isActive,
-      );
-    } catch (_) {
-      return null;
+  // ── force reload (برای pull-to-refresh) ──
+  Future<void> reload(String userId) async {
+    _loadState = DiscountLoadState.idle;
+    await loadDiscounts(userId);
+  }
+
+  // ────────────────────────────────────────────
+  // اعمال کد تخفیف (Supabase)
+  // ────────────────────────────────────────────
+  Future<void> applyCode({
+    required String code,
+    required int cartTotal,
+    String? userId,
+  }) async {
+    if (code.trim().isEmpty) return;
+
+    _isApplying = true;
+    _applyError = null;
+    notifyListeners();
+
+    final result = await DiscountService.applyCode(
+      code: code,
+      cartTotal: cartTotal,
+      userId: userId,
+    );
+
+    if (result.success) {
+      _appliedDiscount = result.discount;
+      _discountAmount = result.discountAmount;
+      _applyError = null;
+    } else {
+      _appliedDiscount = null;
+      _discountAmount = 0;
+      _applyError = result.errorMessage;
     }
+
+    _isApplying = false;
+    notifyListeners();
+  }
+
+  // ────────────────────────────────────────────
+  // حذف کد اعمال‌شده
+  // ────────────────────────────────────────────
+  void removeDiscount() {
+    _appliedDiscount = null;
+    _discountAmount = 0;
+    _applyError = null;
+    notifyListeners();
+  }
+
+  // ────────────────────────────────────────────
+  // علامت‌گذاری به‌عنوان استفاده‌شده (بعد از پرداخت)
+  // ────────────────────────────────────────────
+  Future<void> markAppliedAsUsed({
+    required String orderId,
+    required String userId,
+  }) async {
+    if (_appliedDiscount == null) return;
+
+    await DiscountService.markAsUsed(
+      discountId: _appliedDiscount!.id,
+      orderId: orderId,
+      userId: userId,
+    );
+
+    // آپدیت local state
+    final index = _discounts.indexWhere((d) => d.id == _appliedDiscount!.id);
+    if (index != -1) {
+      _discounts[index] = DiscountModel(
+        id: _discounts[index].id,
+        code: _discounts[index].code,
+        title: _discounts[index].title,
+        description: _discounts[index].description,
+        type: _discounts[index].type,
+        status: DiscountStatus.used, // ← تغییر وضعیت
+        value: _discounts[index].value,
+        expiresAt: _discounts[index].expiresAt,
+        emoji: _discounts[index].emoji,
+        minOrderPrice: _discounts[index].minOrderPrice,
+      );
+    }
+
+    removeDiscount();
+    notifyListeners();
+  }
+
+  // ── reset کامل (هنگام logout) ──
+  void reset() {
+    _discounts = [];
+    _loadState = DiscountLoadState.idle;
+    _loadError = null;
+    _appliedDiscount = null;
+    _discountAmount = 0;
+    _applyError = null;
+    _isApplying = false;
+    notifyListeners();
   }
 }

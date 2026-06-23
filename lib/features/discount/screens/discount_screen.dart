@@ -6,7 +6,17 @@ import '../../../core/theme/app_colors.dart';
 import '../providers/discount_provider.dart';
 
 class DiscountScreen extends StatefulWidget {
-  const DiscountScreen({super.key});
+  /// userId برای لود کدهای کاربر لازم است.
+  /// cartTotal فقط وقتی این صفحه از داخل checkout باز می‌شود معنی دارد؛
+  /// برای مرور ساده می‌توانی 0 بفرستی.
+  const DiscountScreen({
+    super.key,
+    required this.userId,
+    this.cartTotal = 0,
+  });
+
+  final String userId;
+  final int cartTotal;
 
   @override
   State<DiscountScreen> createState() => _DiscountScreenState();
@@ -14,7 +24,7 @@ class DiscountScreen extends StatefulWidget {
 
 class _DiscountScreenState extends State<DiscountScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+  late final TabController _tabCtrl;
   final _codeCtrl = TextEditingController();
   String? _applyError;
   bool _applySuccess = false;
@@ -23,6 +33,10 @@ class _DiscountScreenState extends State<DiscountScreen>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    // لود تخفیف‌ها بعد از اولین فریم (جلوگیری از notifyListeners حین build)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DiscountProvider>().loadDiscounts(widget.userId);
+    });
   }
 
   @override
@@ -32,28 +46,41 @@ class _DiscountScreenState extends State<DiscountScreen>
     super.dispose();
   }
 
-  void _applyCode() {
+  Future<void> _applyCode() async {
     final code = _codeCtrl.text.trim();
     if (code.isEmpty) return;
+
     final provider = context.read<DiscountProvider>();
-    final error = provider.applyCode(code);
+    await provider.applyCode(
+      code: code,
+      cartTotal: widget.cartTotal,
+      userId: widget.userId,
+    );
+
+    if (!mounted) return;
+
+    final error = provider.applyError;
     setState(() {
       _applyError = error;
-      _applySuccess = error == null;
+      _applySuccess = error == null && provider.hasDiscount;
     });
-    if (error == null) {
+
+    if (_applySuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('کد تخفیف اعمال شد ✅'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.green,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
         ),
       );
     }
   }
+
+  Future<void> _refresh() =>
+      context.read<DiscountProvider>().reload(widget.userId);
 
   @override
   Widget build(BuildContext context) {
@@ -88,8 +115,8 @@ class _DiscountScreenState extends State<DiscountScreen>
                 : AppColors.lightTextSecondary,
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
-            labelStyle: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w700),
+            labelStyle:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             tabs: [
               Tab(text: 'فعال (${provider.active.length})'),
               Tab(text: 'استفاده‌شده'),
@@ -98,7 +125,6 @@ class _DiscountScreenState extends State<DiscountScreen>
         ),
         body: Column(
           children: [
-            // ── فیلد ورود کد دستی ──
             _ManualCodeField(
               controller: _codeCtrl,
               error: _applyError,
@@ -110,35 +136,66 @@ class _DiscountScreenState extends State<DiscountScreen>
                 _applySuccess = false;
               }),
             ),
-
-            // ── لیست‌ها ──
-            Expanded(
-              child: TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  _DiscountList(
-                    discounts: provider.active,
-                    isDark: isDark,
-                    emptyText: 'کد تخفیف فعالی نداری',
-                    emptyEmoji: '🏷️',
-                  ),
-                  _DiscountList(
-                    discounts: provider.usedOrExpired,
-                    isDark: isDark,
-                    emptyText: 'هیچ کدی استفاده نشده',
-                    emptyEmoji: '📋',
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: _buildBody(provider, isDark)),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildBody(DiscountProvider provider, bool isDark) {
+    // حالت لودینگ
+    if (provider.isLoading && provider.all.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    // حالت خطا
+    if (provider.loadState == DiscountLoadState.error && provider.all.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.red),
+            const SizedBox(height: 12),
+            Text('خطا در دریافت تخفیف‌ها',
+                style: TextStyle(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary)),
+            const SizedBox(height: 12),
+            ElevatedButton(
+                onPressed: _refresh, child: const Text('تلاش دوباره')),
+          ],
+        ),
+      );
+    }
+    // محتوا
+    return TabBarView(
+      controller: _tabCtrl,
+      children: [
+        RefreshIndicator(
+          onRefresh: _refresh,
+          child: _DiscountList(
+            discounts: provider.active,
+            isDark: isDark,
+            emptyText: 'کد تخفیف فعالی نداری',
+            emptyEmoji: '🏷️',
+          ),
+        ),
+        RefreshIndicator(
+          onRefresh: _refresh,
+          child: _DiscountList(
+            discounts: provider.usedOrExpired,
+            isDark: isDark,
+            emptyText: 'هیچ کدی استفاده نشده',
+            emptyEmoji: '📋',
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-// ── فیلد ورود کد دستی ──
+// ───────────────────────── فیلد ورود کد دستی ─────────────────────────
 class _ManualCodeField extends StatelessWidget {
   const _ManualCodeField({
     required this.controller,
@@ -189,6 +246,8 @@ class _ManualCodeField extends StatelessWidget {
                   onChanged: onChanged,
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.center,
+                  textCapitalization: TextCapitalization.characters,
+                  onSubmitted: (_) => onApply(),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -258,9 +317,11 @@ class _ManualCodeField extends StatelessWidget {
                 const Icon(Icons.error_outline_rounded,
                     color: Colors.red, size: 14),
                 const SizedBox(width: 4),
-                Text(error!,
-                    style: const TextStyle(
-                        color: Colors.red, fontSize: 12)),
+                Expanded(
+                  child: Text(error!,
+                      style: const TextStyle(
+                          color: Colors.red, fontSize: 12)),
+                ),
               ],
             ),
           ],
@@ -272,8 +333,7 @@ class _ManualCodeField extends StatelessWidget {
                     color: Colors.green, size: 14),
                 SizedBox(width: 4),
                 Text('کد با موفقیت اعمال شد',
-                    style: TextStyle(
-                        color: Colors.green, fontSize: 12)),
+                    style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
           ],
@@ -283,7 +343,7 @@ class _ManualCodeField extends StatelessWidget {
   }
 }
 
-// ── لیست تخفیف‌ها ──
+// ───────────────────────── لیست تخفیف‌ها ─────────────────────────
 class _DiscountList extends StatelessWidget {
   const _DiscountList({
     required this.discounts,
@@ -299,26 +359,36 @@ class _DiscountList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (discounts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emptyEmoji, style: const TextStyle(fontSize: 52)),
-            const SizedBox(height: 12),
-            Text(emptyText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                )),
-          ],
-        ),
+      // ListView لازم است تا RefreshIndicator حتی در حالت خالی کار کند
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(emptyEmoji, style: const TextStyle(fontSize: 52)),
+                  const SizedBox(height: 12),
+                  Text(emptyText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      )),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: discounts.length,
       itemBuilder: (_, i) =>
@@ -327,7 +397,7 @@ class _DiscountList extends StatelessWidget {
   }
 }
 
-// ── کارت تخفیف ──
+// ───────────────────────── کارت تخفیف ─────────────────────────
 class _DiscountCard extends StatelessWidget {
   const _DiscountCard({required this.discount, required this.isDark});
   final DiscountModel discount;
@@ -367,8 +437,8 @@ class _DiscountCard extends StatelessWidget {
           children: [
             // ── هدر ──
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: _statusColor.withValues(alpha: 0.08),
                 borderRadius:
@@ -391,7 +461,6 @@ class _DiscountCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // برچسب وضعیت
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
@@ -419,9 +488,9 @@ class _DiscountCard extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  // مقدار تخفیف
                   Container(
-                    width: 70, height: 70,
+                    width: 70,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: _statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
@@ -442,12 +511,10 @@ class _DiscountCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // کد
                         Row(
                           children: [
                             Text(
@@ -477,8 +544,7 @@ class _DiscountCard extends StatelessWidget {
                                             BorderRadius.circular(12)),
                                     margin: const EdgeInsets.fromLTRB(
                                         16, 0, 16, 80),
-                                    duration:
-                                        const Duration(seconds: 2),
+                                    duration: const Duration(seconds: 2),
                                   ));
                                 },
                                 child: Icon(Icons.copy_rounded,
@@ -499,7 +565,6 @@ class _DiscountCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        // اطلاعات
                         Wrap(
                           spacing: 8,
                           children: [
@@ -541,6 +606,7 @@ class _DiscountCard extends StatelessWidget {
   }
 }
 
+// ───────────────────────── تگ کوچک ─────────────────────────
 class _Tag extends StatelessWidget {
   const _Tag(
       {required this.text, required this.isDark, this.urgent = false});
@@ -551,8 +617,7 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: urgent
             ? Colors.red.withValues(alpha: 0.1)
