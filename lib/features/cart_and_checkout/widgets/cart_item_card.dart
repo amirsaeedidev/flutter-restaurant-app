@@ -226,6 +226,7 @@ class _QuantityRow extends StatelessWidget {
         ),
         // ── دکمه افزایش (همیشه فعال) ──
         _QBtn(
+          
           icon: Icons.add_rounded,
           onTap: onIncrement,
           isDark: isDark,
@@ -238,11 +239,11 @@ class _QuantityRow extends StatelessWidget {
 
 class _QBtn extends StatelessWidget {
   const _QBtn({
+    
     required this.icon,
     required this.onTap,
     required this.isDark,
-    this.isPrimary = false,
-    this.color,
+    this.isPrimary = false, this.color,
   });
   final IconData icon;
   final VoidCallback onTap;
