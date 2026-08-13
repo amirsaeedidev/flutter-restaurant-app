@@ -1,64 +1,49 @@
 import 'package:flutter/material.dart';
 import '../../../core/model/order_model.dart';
+import '../../../core/model/cart_item_model.dart';
+import '../../../core/services/supabase_service.dart';
 
 class OrdersProvider extends ChangeNotifier {
-  // سفارشات Mock برای نمایش
-  final List<OrderModel> _orders = [
-    OrderModel(
-      id: '1',
-      orderCode: 'RST-۱۴۰۳-۰۰۱',
-      items: const [
-        OrderItemModel(productName: 'چلو کباب کوبیده مخصوص', quantity: 2, unitPrice: 250000),
-        OrderItemModel(productName: 'دوغ آبعلی شیشه‌ای', quantity: 2, unitPrice: 25000),
-      ],
-      totalPrice: 565000,
-      status: OrderStatus.onTheWay,
-      type: OrderType.delivery,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-      estimatedDelivery: DateTime.now().add(const Duration(minutes: 15)),
-      address: 'تهران، خیابان ولیعصر، پلاک ۱۲',
-      note: 'زودتر بیارید ممنون',
-    ),
-    OrderModel(
-      id: '2',
-      orderCode: 'RST-۱۴۰۳-۰۰۲',
-      items: const [
-        OrderItemModel(productName: 'کباب شیشلیک شاندیز', quantity: 1, unitPrice: 650000),
-        OrderItemModel(productName: 'زیتون پرورده رودبار', quantity: 1, unitPrice: 85000),
-      ],
-      totalPrice: 735000,
-      status: OrderStatus.delivered,
-      type: OrderType.dineIn,
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      estimatedDelivery: DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-      tableNumber: 7,
-    ),
-    OrderModel(
-      id: '3',
-      orderCode: 'RST-۱۴۰۳-۰۰۳',
-      items: const [
-        OrderItemModel(productName: 'چلو جوجه کباب زعفرانی', quantity: 3, unitPrice: 220000),
-      ],
-      totalPrice: 675000,
-      status: OrderStatus.preparing,
-      type: OrderType.delivery,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-      estimatedDelivery: DateTime.now().add(const Duration(minutes: 35)),
-      address: 'تهران، خیابان شریعتی، کوچه گلها، پلاک ۴',
-    ),
-  ];
+  List<OrderModel> _orders = [];
+  bool _isLoading = false;
+  String? _error;
 
   List<OrderModel> get orders => List.unmodifiable(_orders);
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  // سفارش‌های فعال (تحویل نشده)
   List<OrderModel> get activeOrders => _orders
-      .where((o) => o.status != OrderStatus.delivered)
+      .where((o) => o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled)
       .toList();
 
-  // تاریخچه (تحویل داده شده)
   List<OrderModel> get historyOrders => _orders
-      .where((o) => o.status == OrderStatus.delivered)
+      .where((o) => o.status == OrderStatus.delivered || o.status == OrderStatus.cancelled)
       .toList();
+
+  Future<void> fetchOrders() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId == null) throw Exception("کاربر لاگین نیست");
+
+      final response = await SupabaseService.client
+          .from('orders')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      _orders = (response as List).map((e) => OrderModel.fromJson(e)).toList();
+    } catch (e) {
+      _error = "خطا در دریافت سفارش‌ها";
+      print("Error fetching orders: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   OrderModel? findById(String id) {
     try {
@@ -68,9 +53,52 @@ class OrdersProvider extends ChangeNotifier {
     }
   }
 
-  // افزودن سفارش جدید (بعد از checkout)
-  void addOrder(OrderModel order) {
-    _orders.insert(0, order);
-    notifyListeners();
+  Future<bool> placeOrder(OrderModel order, List<CartItemModel> cartItems) async {
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId == null) throw Exception("کاربر لاگین نیست");
+
+      // ۱. ثبت سفارش اصلی
+      final orderPayload = order.toJson();
+      orderPayload['user_id'] = userId;
+
+      final orderResponse = await SupabaseService.client
+          .from('orders')
+          .insert(orderPayload)
+          .select()
+          .single();
+
+      final orderId = orderResponse['id'];
+      final newOrder = OrderModel.fromJson(orderResponse);
+
+      // ۲. ثبت آیتم‌های سفارش
+      final itemsPayload = cartItems.map((item) => {
+            'order_id': orderId,
+            'product_id': item.product.id,
+            'quantity': item.quantity,
+            'unit_price': item.product.price,
+            'total_price': item.totalPrice,
+          }).toList();
+
+      await SupabaseService.client.from('order_items').insert(itemsPayload);
+
+      // ۳. اضافه کردن به لیست محلی برای بروزرسانی سریع UI
+      _orders.insert(0, newOrder.copyWith(
+        items: cartItems.map((e) => OrderItemModel(
+          productId: e.product.id,
+          productName: e.product.name,
+          quantity: e.quantity,
+          unitPrice: e.product.price,
+        )).toList(),
+      ));
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = "خطا در ثبت سفارش";
+      print("Error placing order: $e");
+      notifyListeners();
+      return false;
+    }
   }
 }

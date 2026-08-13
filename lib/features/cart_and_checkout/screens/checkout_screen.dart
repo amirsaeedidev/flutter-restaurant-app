@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/model/address_model.dart';
+import '../../../core/model/order_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../address/providers/address_provider.dart';
 import '../../address/widgets/address_selector_sheet.dart';
 import '../../cart_and_checkout/providers/cart_provider.dart';
 import '../../loyalty/providers/loyalty_provider.dart';
+import '../../orders/providers/orders_provider.dart';
 import '../../orders/screens/recent_orders_screen.dart';
 
 enum _DeliveryType { delivery, dineIn }
@@ -35,7 +37,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   int? _selectedTable;
 
   // ── تخفیف ──
-  // FIX: کنترلر تخفیف فقط یه بار تعریف میشه
   final _discountController = TextEditingController();
   String? _appliedDiscountCode;
   int _discountAmount = 0;
@@ -63,8 +64,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return '$buf تومان';
   }
 
-  // ── اعمال کد تخفیف ──
-  // TODO: بعد از Supabase این رو با discount_service جایگزین کن
   Future<void> _applyDiscount() async {
     final code = _discountController.text.trim().toUpperCase();
     if (code.isEmpty) return;
@@ -74,13 +73,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _discountError = null;
     });
 
-    // شبیه‌سازی تأخیر — بعد از Supabase حذف میشه
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
     final cart = context.read<CartProvider>();
 
-    // TODO: جایگزین با DiscountService.applyCode(code, cartTotal)
     if (code == 'WELCOME20') {
       setState(() {
         _appliedDiscountCode = code;
@@ -105,7 +102,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // ── حذف کد تخفیف ──
   void _removeDiscount() {
     setState(() {
       _appliedDiscountCode = null;
@@ -154,7 +150,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
-            // ── نوع سفارش ──
             _SectionTitle(title: 'نوع سفارش', isDark: isDark),
             const SizedBox(height: 10),
             _DeliveryTypeSelector(
@@ -164,7 +159,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
 
-            // ── بدنه بر اساس نوع ──
             if (_type == _DeliveryType.delivery) ...[
               _SectionTitle(title: 'اطلاعات تحویل', isDark: isDark),
               const SizedBox(height: 10),
@@ -173,14 +167,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 isDark: isDark,
                 onPick: (addr) => setState(() {
                   _selectedAddress = addr;
-                  _addressController.text = addr.fullAddress;
+                  _addressController.text = addr.addressLine;
                   if (addr.phone != null) {
                     _phoneController.text = addr.phone!;
                   }
                 }),
               ),
               const SizedBox(height: 10),
-              // FIX: فرم دلیوری با StatefulWidget جداگانه
               _DeliveryForm(
                 addressController: _addressController,
                 phoneController: _phoneController,
@@ -215,7 +208,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 20),
 
-            // ── کد تخفیف — فقط یه بار! ──
             _SectionTitle(title: 'کد تخفیف', isDark: isDark),
             const SizedBox(height: 10),
             _DiscountBox(
@@ -230,7 +222,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 20),
 
-            // ── خلاصه پرداخت ──
             _SectionTitle(title: 'خلاصه پرداخت', isDark: isDark),
             const SizedBox(height: 10),
             _OrderSummary(
@@ -248,7 +239,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           total: total,
           isDark: isDark,
           formatPrice: _format,
-          onPay: () => _handlePayment(context),
+          onPay: () => _handlePayment(context, total),
         ),
       ),
     );
@@ -285,13 +276,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _handlePayment(BuildContext context) {
+  void _handlePayment(BuildContext context, int total) {
     if (!_validate()) return;
-    _showPaymentDialog(context);
+    _showPaymentDialog(context, total);
   }
 
-  void _showPaymentDialog(BuildContext context) {
+  void _showPaymentDialog(BuildContext context, int total) {
     final cart = context.read<CartProvider>();
+    final ordersProvider = context.read<OrdersProvider>();
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -318,18 +311,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
-                  final totalPrice = cart.totalPrice;
-                  cart.clearCart();
-                  await context
-                      .read<LoyaltyProvider>()
-                      .addPointsForOrder(totalPrice);
-                  if (!context.mounted) return;
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const RecentOrdersScreen()),
-                    (route) => route.isFirst,
+                  final newOrder = OrderModel(
+                    id: '',
+                    orderCode: '',
+                    items: const [],
+                    totalPrice: total,
+                    status: OrderStatus.pending,
+                    type: _type == _DeliveryType.delivery ? OrderType.delivery : OrderType.dineIn,
+                    createdAt: DateTime.now(),
+                    estimatedDelivery: DateTime.now().add(const Duration(minutes: 45)),
+                    address: _type == _DeliveryType.delivery ? _addressController.text : null,
+                    tableNumber: _type == _DeliveryType.dineIn ? _selectedTable : null,
+                    note: widget.orderNote,
                   );
+
+                  final success = await ordersProvider.placeOrder(newOrder, cart.items);
+
+                  if (success && context.mounted) {
+                    cart.clearCart();
+                    await context.read<LoyaltyProvider>().addPointsForOrder(total);
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const RecentOrdersScreen()),
+                      (route) => route.isFirst,
+                    );
+                  } else if (context.mounted) {
+                    Navigator.pop(context);
+                    _showError('خطا در ثبت سفارش. دوباره تلاش کنید.');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -352,10 +362,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// ویجت‌های داخلی
-// ══════════════════════════════════════════════════════
-
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title, required this.isDark});
   final String title;
@@ -374,7 +380,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-// ── انتخابگر دلیوری / حضوری ──
 class _DeliveryTypeSelector extends StatelessWidget {
   const _DeliveryTypeSelector({
     required this.selected,
@@ -476,7 +481,6 @@ class _TypeCard extends StatelessWidget {
   }
 }
 
-// ── انتخابگر حالت حضوری ──
 class _DineInModeSelector extends StatelessWidget {
   const _DineInModeSelector({
     required this.mode,
@@ -596,7 +600,6 @@ class _ModeCard extends StatelessWidget {
   }
 }
 
-// ── انتخابگر میز ──
 class _TableSelector extends StatelessWidget {
   const _TableSelector({
     required this.selectedTable,
@@ -688,8 +691,6 @@ class _TableSelector extends StatelessWidget {
   }
 }
 
-// ── فرم دلیوری ──
-// FIX: تبدیل به StatefulWidget تا TextField‌ها context مستقل داشته باشن
 class _DeliveryForm extends StatefulWidget {
   const _DeliveryForm({
     required this.addressController,
@@ -713,7 +714,6 @@ class _DeliveryFormState extends State<_DeliveryForm> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── آدرس ──
         TextField(
           controller: widget.addressController,
           maxLines: 2,
@@ -727,7 +727,6 @@ class _DeliveryFormState extends State<_DeliveryForm> {
 
         const SizedBox(height: 12),
 
-        // ── گیرنده خودمه ──
         GestureDetector(
           onTap: () => widget.onSameAsUserChanged(!widget.sameAsUser),
           child: Container(
@@ -784,7 +783,6 @@ class _DeliveryFormState extends State<_DeliveryForm> {
           ),
         ),
 
-        // ── شماره تلفن ──
         if (!widget.sameAsUser) ...[
           const SizedBox(height: 12),
           TextField(
@@ -836,7 +834,6 @@ class _DeliveryFormState extends State<_DeliveryForm> {
   }
 }
 
-// ── پیکر آدرس ذخیره‌شده ──
 class _SavedAddressPicker extends StatelessWidget {
   const _SavedAddressPicker({
     required this.selected,
@@ -885,7 +882,7 @@ class _SavedAddressPicker extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                selected?.fullAddress ?? 'انتخاب از آدرس‌های ذخیره‌شده',
+                selected?.addressLine ?? 'انتخاب از آدرس‌های ذخیره‌شده',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -911,8 +908,6 @@ class _SavedAddressPicker extends StatelessWidget {
   }
 }
 
-// ── باکس کد تخفیف ──
-// FIX: StatefulWidget با کنترلر مجزا + انیمیشن شیک
 class _DiscountBox extends StatefulWidget {
   const _DiscountBox({
     required this.controller,
@@ -960,7 +955,6 @@ class _DiscountBoxState extends State<_DiscountBox>
   @override
   void didUpdateWidget(_DiscountBox old) {
     super.didUpdateWidget(old);
-    // اگه خطای جدید اومد، شیک کن
     if (widget.discountError != null &&
         widget.discountError != old.discountError) {
       _shakeCtrl.forward(from: 0);
@@ -1002,7 +996,6 @@ class _DiscountBoxState extends State<_DiscountBox>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── عنوان ──
             Row(
               children: [
                 const Text('🏷️', style: TextStyle(fontSize: 14)),
@@ -1022,7 +1015,6 @@ class _DiscountBoxState extends State<_DiscountBox>
 
             const SizedBox(height: 10),
 
-            // ── chip کد اعمال‌شده ──
             if (widget.appliedCode != null)
               _AppliedChip(
                 code: widget.appliedCode!,
@@ -1030,7 +1022,6 @@ class _DiscountBoxState extends State<_DiscountBox>
                 onRemove: widget.onRemove,
               )
             else
-              // ── ردیف ورود کد ──
               Row(
                 children: [
                   Expanded(
@@ -1048,10 +1039,7 @@ class _DiscountBoxState extends State<_DiscountBox>
                                 ? AppColors.darkText
                                 : AppColors.lightText),
                       ),
-                      onChanged: (_) {
-                        // هر بار تایپ میشه، خطا پاک بشه
-                        // parent از طریق state مدیریت میکنه
-                      },
+                      onChanged: (_) {},
                       onSubmitted: (_) => widget.onApply(),
                       decoration: InputDecoration(
                         hintText: 'کد تخفیف',
@@ -1123,7 +1111,6 @@ class _DiscountBoxState extends State<_DiscountBox>
                 ],
               ),
 
-            // ── پیام خطا ──
             if (widget.discountError != null) ...[
               const SizedBox(height: 8),
               Row(
@@ -1152,7 +1139,6 @@ class _DiscountBoxState extends State<_DiscountBox>
   }
 }
 
-// ── chip کد اعمال‌شده ──
 class _AppliedChip extends StatelessWidget {
   const _AppliedChip({
     required this.code,
@@ -1214,7 +1200,6 @@ class _AppliedChip extends StatelessWidget {
   }
 }
 
-// ── خلاصه سفارش ──
 class _OrderSummary extends StatelessWidget {
   const _OrderSummary({
     required this.cart,
@@ -1259,7 +1244,6 @@ class _OrderSummary extends StatelessWidget {
               isDark: isDark,
             ),
           ],
-          // ── تخفیف فقط وقتی > 0 ──
           if (discountAmount > 0) ...[
             const SizedBox(height: 8),
             _SummaryRow(
@@ -1332,7 +1316,6 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-// ── دکمه پرداخت ──
 class _PayButton extends StatelessWidget {
   const _PayButton({
     required this.total,
