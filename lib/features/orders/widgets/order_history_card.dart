@@ -32,6 +32,7 @@ class OrderHistoryCard extends StatelessWidget {
       case OrderStatus.preparing: return Colors.purple;
       case OrderStatus.onTheWay:  return AppColors.primary;
       case OrderStatus.delivered: return Colors.green;
+      case OrderStatus.cancelled: return Colors.red; // اضافه شد تا خطای switch برطرف شود
     }
   }
 
@@ -39,7 +40,8 @@ class OrderHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _statusColor(order.status);
-    final isActive = order.status != OrderStatus.delivered;
+    // سفارش‌های لغو شده هم نباید فعال محسوب شوند
+    final isActive = order.status != OrderStatus.delivered && order.status != OrderStatus.cancelled;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -156,7 +158,7 @@ class OrderHistoryCard extends StatelessWidget {
                         child: Text(
                           order.type == OrderType.delivery
                               ? '🛵 دلیوری'
-                              : '🪑 میز ${order.tableNumber}',
+                              : '🪑 میز ${order.tableNumber ?? 'نامشخص'}',
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark

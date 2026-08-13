@@ -272,7 +272,7 @@ class _AddressCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: Text(
-              address.fullAddress,
+              address.addressLine,
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
@@ -372,7 +372,7 @@ class _AddressFormSheetState extends State<AddressFormSheet> {
     _titleCtrl = TextEditingController(
         text: widget.existing?.title ?? '');
     _addressCtrl = TextEditingController(
-        text: widget.existing?.fullAddress ?? '');
+        text: widget.existing?.addressLine ?? '');
     _phoneCtrl = TextEditingController(
         text: widget.existing?.phone ?? '');
   }
@@ -396,7 +396,7 @@ class _AddressFormSheetState extends State<AddressFormSheet> {
               ? _titleCtrl.text.trim()
               : 'آدرس من')
           : _selectedTitle,
-      fullAddress: _addressCtrl.text.trim(),
+      addressLine: _addressCtrl.text.trim(),
       phone: _phoneCtrl.text.trim().isNotEmpty
           ? _phoneCtrl.text.trim()
           : null,

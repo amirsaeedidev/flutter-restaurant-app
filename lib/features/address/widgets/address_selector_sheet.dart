@@ -229,7 +229,7 @@ class AddressSelectorSheet extends StatelessWidget {
                                       ],
                                     ],
                                   ),
-                                  Text(addr.fullAddress,
+                                  Text(addr.addressLine,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(

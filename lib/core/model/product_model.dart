@@ -10,6 +10,20 @@ class CategoryModel {
     required this.imageUrl,
     this.loyaltyPointsPerItem = 0,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'image_url': imageUrl,
+        'loyalty_points_per_item': loyaltyPointsPerItem,
+      };
+
+  factory CategoryModel.fromJson(Map<String, dynamic> j) => CategoryModel(
+        id: j['id'].toString(),
+        name: j['name'] ?? '',
+        imageUrl: j['image_url'] ?? '',
+        loyaltyPointsPerItem: j['loyalty_points_per_item'] ?? 0,
+      );
 }
 
 class ProductModel {
@@ -34,4 +48,28 @@ class ProductModel {
     required this.isPopular,
     required this.categoryId,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'price': price,
+        'image_url': imageUrl,
+        'rating': rating,
+        'review_count': reviewCount,
+        'is_popular': isPopular,
+        'category_id': categoryId,
+      };
+
+  factory ProductModel.fromJson(Map<String, dynamic> j) => ProductModel(
+        id: j['id'].toString(),
+        name: j['name'] ?? '',
+        description: j['description'] ?? '',
+        price: j['price'] ?? 0,
+        imageUrl: j['image_url'] ?? '',
+        rating: (j['rating'] ?? 0).toDouble(),
+        reviewCount: j['review_count'] ?? 0,
+        isPopular: j['is_popular'] ?? false,
+        categoryId: j['category_id']?.toString() ?? '',
+      );
 }
