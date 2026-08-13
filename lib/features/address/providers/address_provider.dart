@@ -1,16 +1,18 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/model/address_model.dart';
+import '../../../core/services/supabase_service.dart';
 
 class AddressProvider extends ChangeNotifier {
-  static const _key = 'addresses';
   List<AddressModel> _addresses = [];
+  bool _isLoading = false;
   bool _loaded = false;
+  String? _error;
 
   List<AddressModel> get addresses => List.unmodifiable(_addresses);
+  bool get isLoading => _isLoading;
   bool get loaded => _loaded;
   bool get isEmpty => _addresses.isEmpty;
+  String? get error => _error;
 
   AddressModel? get defaultAddress {
     try {
@@ -21,63 +23,146 @@ class AddressProvider extends ChangeNotifier {
   }
 
   AddressProvider() {
-    _load();
+    fetchAddresses();
   }
 
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = (jsonDecode(raw) as List)
-          .map((e) => AddressModel.fromJson(e))
-          .toList();
-      _addresses = list;
-    }
-    _loaded = true;
+  Future<String?> _getCurrentUserId() async {
+    final user = SupabaseService.client.auth.currentUser;
+    return user?.id;
+  }
+
+  // دریافت لیست آدرس‌ها از Supabase
+  Future<void> fetchAddresses() async {
+    _isLoading = true;
+    _error = null;
     notifyListeners();
-  }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_addresses.map((a) => a.toJson()).toList()),
-    );
-  }
+    try {
+      final userId = await _getCurrentUserId();
+      if (userId == null) throw Exception("کاربر لاگین نیست");
 
-  Future<void> add(AddressModel address) async {
-    // اگه اولین آدرسه، default بشه
-    final isFirst = _addresses.isEmpty;
-    _addresses.add(address.copyWith(isDefault: isFirst));
-    notifyListeners();
-    await _save();
-  }
+      final response = await SupabaseService.client
+          .from('addresses')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
 
-  Future<void> update(AddressModel updated) async {
-    final i = _addresses.indexWhere((a) => a.id == updated.id);
-    if (i != -1) {
-      _addresses[i] = updated;
+      _addresses =
+          (response as List).map((e) => AddressModel.fromJson(e)).toList();
+      _loaded = true;
+    } catch (e) {
+      _error = "خطا در دریافت آدرس‌ها";
+      print("Error fetching addresses: $e");
+    } finally {
+      _isLoading = false;
       notifyListeners();
-      await _save();
     }
   }
 
-  Future<void> remove(String id) async {
-    final wasDefault = _addresses.any((a) => a.id == id && a.isDefault);
-    _addresses.removeWhere((a) => a.id == id);
-    // اگه default حذف شد، اولی رو default کن
-    if (wasDefault && _addresses.isNotEmpty) {
-      _addresses[0] = _addresses[0].copyWith(isDefault: true);
+  // اضافه کردن آدرس جدید
+  Future<bool> add(AddressModel address) async {
+    try {
+      final userId = await _getCurrentUserId();
+      if (userId == null) throw Exception("کاربر لاگین نیست");
+
+      // اگر اولین آدرس است، پیش‌فرض شود
+      final isFirst = _addresses.isEmpty;
+      
+      final payload = address.toJson();
+      payload['user_id'] = userId;
+      payload['is_default'] = isFirst;
+
+      final response = await SupabaseService.client
+          .from('addresses')
+          .insert(payload)
+          .select()
+          .single();
+
+      _addresses.insert(0, AddressModel.fromJson(response));
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = "خطا در ذخیره آدرس";
+      print("Error adding address: $e");
+      notifyListeners();
+      return false;
     }
-    notifyListeners();
-    await _save();
   }
 
-  Future<void> setDefault(String id) async {
-    _addresses = _addresses
-        .map((a) => a.copyWith(isDefault: a.id == id))
-        .toList();
-    notifyListeners();
-    await _save();
+  // ویرایش آدرس
+  Future<bool> update(AddressModel updated) async {
+    try {
+      await SupabaseService.client
+          .from('addresses')
+          .update(updated.toJson())
+          .eq('id', updated.id);
+
+      final i = _addresses.indexWhere((a) => a.id == updated.id);
+      if (i != -1) {
+        _addresses[i] = updated;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = "خطا در ویرایش آدرس";
+      print("Error updating address: $e");
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // حذف آدرس
+  Future<bool> remove(String id) async {
+    try {
+      await SupabaseService.client.from('addresses').delete().eq('id', id);
+      
+      final wasDefault = _addresses.any((a) => a.id == id && a.isDefault);
+      _addresses.removeWhere((a) => a.id == id);
+      
+      // اگر آدرس پیش‌فرض حذف شد و آدرس دیگری وجود دارد، اولین آدرس پیش‌فرض شود
+      if (wasDefault && _addresses.isNotEmpty) {
+        await setDefault(_addresses.first.id);
+      }
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = "خطا در حذف آدرس";
+      print("Error deleting address: $e");
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // تنظیم به عنوان آدرس پیش‌فرض
+  Future<bool> setDefault(String id) async {
+    try {
+      final userId = await _getCurrentUserId();
+      if (userId == null) throw Exception("کاربر لاگین نیست");
+
+      // ابتدا همه آدرس‌های کاربر را false می‌کنیم
+      await SupabaseService.client
+          .from('addresses')
+          .update({'is_default': false})
+          .eq('user_id', userId);
+
+      // سپس آدرس مورد نظر را true می‌کنیم
+      await SupabaseService.client
+          .from('addresses')
+          .update({'is_default': true})
+          .eq('id', id);
+
+      _addresses = _addresses
+          .map((a) => a.copyWith(isDefault: a.id == id))
+          .toList();
+          
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = "خطا در تنظیم آدرس پیش‌فرض";
+      print("Error setting default address: $e");
+      notifyListeners();
+      return false;
+    }
   }
 }
