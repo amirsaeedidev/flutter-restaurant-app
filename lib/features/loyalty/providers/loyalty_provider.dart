@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/model/loyalty_model.dart';
+import '../../../core/services/supabase_service.dart';
 
 class LoyaltyProvider extends ChangeNotifier {
-  static const _keyPoints = 'loyaltyPoints';
-
   int _points = 0;
+  bool _isLoading = false;
   bool _loaded = false;
 
   int get points => _points;
+  bool get isLoading => _isLoading;
   bool get loaded => _loaded;
 
   LevelConfig get currentLevel => levelOf(_points);
@@ -40,30 +40,51 @@ class LoyaltyProvider extends ChangeNotifier {
   }
 
   LoyaltyProvider() {
-    _load();
+    fetchPoints();
   }
 
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    _points = prefs.getInt(_keyPoints) ?? 1250; // مقدار Mock اولیه
-    _loaded = true;
+  // دریافت امتیازات از Supabase
+  Future<void> fetchPoints() async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId == null) {
+        _points = 0;
+        return;
+      }
+
+      final response = await SupabaseService.client
+          .from('loyalty_wallets')
+          .select('total_points')
+          .eq('user_identifier', userId)
+          .maybeSingle();
+
+      if (response != null) {
+        _points = response['total_points'] as int? ?? 0;
+      } else {
+        _points = 0;
+      }
+      _loaded = true;
+    } catch (e) {
+      print("Error fetching loyalty points: $e");
+      _points = 0;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  // فراخوانی بعد از هر سفارش موفق
+  // این متد فعلاً کاری انجام نمی‌دهد چون امتیازها توسط مدیر اضافه می‌شوند
+  // اما برای جلوگیری از ارور در checkout_screen.dart نگه داشته شده است
   Future<void> addPointsForOrder(int orderTotal) async {
-    final earned = pointsForOrder(orderTotal);
-    _points += earned;
-    notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyPoints, _points);
+    // No-op: Admin will handle points manually
   }
 
   // reset برای تست
   Future<void> resetPoints() async {
     _points = 0;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyPoints, 0);
   }
 }

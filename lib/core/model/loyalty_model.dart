@@ -42,7 +42,7 @@ const levels = [
     title: 'عضو VIP',
     emoji: '👑',
     minPoints: 2000,
-    maxPoints: 2000,
+    maxPoints: 2000, // چون بالاترین سطح است
     discountPct: 15,
     discountCode: 'VIP15',
     perks: [
@@ -58,5 +58,4 @@ const levels = [
 LevelConfig levelOf(int points) =>
     points >= 2000 ? levels[1] : levels[0];
 
-// امتیاز به ازای هر سفارش = ۱٪ مبلغ (تومان → امتیاز)
-int pointsForOrder(int totalPrice) => (totalPrice / 1000).round();
+// تابع pointsForOrder حذف شد چون امتیازها توسط مدیر به صورت دستی اضافه می‌شوند.
