@@ -3,7 +3,7 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String phone;
-  final int points;           // امتیاز باشگاه مشترکین
+  final int points;           // امتیاز باشگاه مشترکین (از loyalty_wallets.total_points)
   final String? avatarUrl;
 
   const UserModel({
@@ -45,4 +45,23 @@ class UserModel {
       avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
+
+  // برای آپدیت اطلاعات در Supabase
+  Map<String, dynamic> toJson() => {
+        'first_name': firstName,
+        'last_name': lastName,
+        'phone': phone,
+        'avatar_url': avatarUrl,
+      };
+
+  // برای خواندن اطلاعات از Supabase
+  factory UserModel.fromJson(Map<String, dynamic> j) => UserModel(
+        id: j['id'],
+        firstName: j['first_name'] ?? '',
+        lastName: j['last_name'] ?? '',
+        phone: j['phone'] ?? '',
+        avatarUrl: j['avatar_url'],
+        // اگر کوئری ما Join با جدول loyalty_wallets داشته باشد، total_points را می‌گیرد
+        points: j['total_points'] ?? 0, 
+      );
 }

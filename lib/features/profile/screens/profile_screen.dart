@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/model/user_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/model/loyalty_model.dart';
 import '../../loyalty/providers/loyalty_provider.dart';
@@ -22,6 +23,22 @@ class ProfileScreen extends StatelessWidget {
     final user = profile.user;
     final level = loyalty.currentLevel;
     final isVip = level.level == MemberLevel.vip;
+
+    // هندل کردن حالت لودینگ یا نبود کاربر
+    if (profile.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'خطا در دریافت اطلاعات کاربر',
+            style: TextStyle(color: isDark ? AppColors.darkText : AppColors.lightText),
+          ),
+        ),
+      );
+    }
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -176,7 +193,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.isVip,
     required this.isDark,
   });
-  final user;
+  final UserModel user; // نوع دقیق مشخص شد
   final LoyaltyProvider loyalty;
   final LevelConfig level;
   final bool isVip;
