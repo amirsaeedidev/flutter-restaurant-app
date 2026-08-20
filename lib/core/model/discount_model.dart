@@ -68,19 +68,39 @@ class DiscountModel {
     return buf.toString();
   }
 
-  // ── fromJson مقاوم در برابر null و نوع داده (Supabase) ──
+  // ── fromJson هماهنگ با دیتابیس واقعی Supabase ──
   factory DiscountModel.fromJson(Map<String, dynamic> json) {
+    // بررسی فعال بودن کد در دیتابیس
+    final bool isActiveInDb = json['is_active'] as bool? ?? false;
+    
+    // اگر تاریخ انقضا گذشته باشد، وضعیت expired است، در غیر این صورت اگر فعال باشد active است
+    final exp = _toDateOrNull(json['expires_at']);
+    bool isExpired = exp != null && DateTime.now().isAfter(exp);
+    
+    DiscountStatus parsedStatus;
+    if (isExpired) {
+      parsedStatus = DiscountStatus.expired;
+    } else if (isActiveInDb) {
+      parsedStatus = DiscountStatus.active;
+    } else {
+      parsedStatus = DiscountStatus.used; // یا در واقع غیرفعال
+    }
+
     return DiscountModel(
       id: json['id'].toString(),
       code: (json['code'] as String?)?.toUpperCase() ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      type: _typeFrom(json['type'] as String?),
-      status: _statusFrom(json['status'] as String?),
-      value: _toDouble(json['value']),
-      minOrderPrice: _toIntOrNull(json['min_order_price']),
-      expiresAt: _toDateOrNull(json['expires_at']),
-      emoji: json['emoji'] as String? ?? '🏷️',
+      // در دیتابیس discount_type است
+      type: _typeFrom(json['discount_type'] as String?),
+      status: parsedStatus,
+      // در دیتابیس discount_value است
+      value: _toDouble(json['discount_value']),
+      // در دیتابیس min_order_amount است
+      minOrderPrice: _toIntOrNull(json['min_order_amount']),
+      expiresAt: exp,
+      // فیلد emoji در دیتابیس نیست، مقدار پیش‌فرض می‌دهیم
+      emoji: '🏷️',
     );
   }
 
@@ -89,12 +109,11 @@ class DiscountModel {
         'code': code,
         'title': title,
         'description': description,
-        'type': type.name,
-        'status': status.name,
-        'value': value,
-        'min_order_price': minOrderPrice,
+        'discount_type': type.name,
+        'discount_value': value,
+        'min_order_amount': minOrderPrice,
         'expires_at': expiresAt?.toIso8601String(),
-        'emoji': emoji,
+        'is_active': status == DiscountStatus.active,
       };
 
   DiscountModel copyWith({DiscountStatus? status}) => DiscountModel(
@@ -113,17 +132,6 @@ class DiscountModel {
   // ── helpers ──
   static DiscountType _typeFrom(String? v) =>
       v == 'fixed' ? DiscountType.fixed : DiscountType.percent;
-
-  static DiscountStatus _statusFrom(String? v) {
-    switch (v) {
-      case 'used':
-        return DiscountStatus.used;
-      case 'expired':
-        return DiscountStatus.expired;
-      default:
-        return DiscountStatus.active;
-    }
-  }
 
   static double _toDouble(dynamic v) {
     if (v is num) return v.toDouble();

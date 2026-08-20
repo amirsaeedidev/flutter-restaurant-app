@@ -10,6 +10,8 @@ import '../../loyalty/providers/loyalty_provider.dart';
 import '../../orders/providers/orders_provider.dart';
 import '../../orders/screens/recent_orders_screen.dart';
 
+import '../../discount/providers/discount_provider.dart';
+
 enum _DeliveryType { delivery, dineIn }
 
 enum _DineInMode { takeaway, reserveTable }
@@ -64,45 +66,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return '$buf تومان';
   }
 
-  Future<void> _applyDiscount() async {
-    final code = _discountController.text.trim().toUpperCase();
+   Future<void> _applyDiscount() async {
+    final code = _discountController.text.trim();
     if (code.isEmpty) return;
 
-    setState(() {
-      _isApplyingDiscount = true;
-      _discountError = null;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-
     final cart = context.read<CartProvider>();
+    final discountProvider = context.read<DiscountProvider>();
 
-    if (code == 'WELCOME20') {
+    await discountProvider.applyCode(
+      code: code,
+      cartTotal: cart.totalPrice,
+    );
+
+    if (mounted) {
       setState(() {
-        _appliedDiscountCode = code;
-        _discountAmount = (cart.totalPrice * 0.2).round();
-        _discountError = null;
-        _isApplyingDiscount = false;
-      });
-    } else if (code == 'FREESHIP') {
-      setState(() {
-        _appliedDiscountCode = code;
-        _discountAmount = 15000;
-        _discountError = null;
-        _isApplyingDiscount = false;
-      });
-    } else {
-      setState(() {
-        _appliedDiscountCode = null;
-        _discountAmount = 0;
-        _discountError = 'کد تخفیف معتبر نیست';
-        _isApplyingDiscount = false;
+        _appliedDiscountCode = discountProvider.appliedDiscount?.code;
+        _discountAmount = discountProvider.discountAmount;
+        _discountError = discountProvider.applyError;
       });
     }
   }
 
-  void _removeDiscount() {
+   void _removeDiscount() {
+    context.read<DiscountProvider>().removeDiscount();
     setState(() {
       _appliedDiscountCode = null;
       _discountAmount = 0;

@@ -12,16 +12,12 @@ class DiscountBox extends StatefulWidget {
     required this.isDark,
     required this.onDiscountApplied,
     required this.cartTotal,
-    this.userId,
   });
 
   final bool isDark;
 
   /// مقدار کل سبد خرید (تومان)
   final int cartTotal;
-
-  /// شناسه کاربر (اختیاری)
-  final String? userId;
 
   /// callback — مقدار تخفیف (تومان) رو برمیگردونه
   /// اگه کد حذف بشه، صفر برمیگردونه
@@ -84,11 +80,10 @@ class _DiscountBoxState extends State<DiscountBox>
 
     final provider = context.read<DiscountProvider>();
 
-    // اعمال کد با متد جدید
+    // اعمال کد (بدون userId)
     await provider.applyCode(
       code: code,
       cartTotal: widget.cartTotal,
-      userId: widget.userId,
     );
 
     if (!mounted) return;

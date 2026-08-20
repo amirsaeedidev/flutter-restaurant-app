@@ -1,5 +1,3 @@
-// features/discount/providers/discount_provider.dart
-
 import 'package:flutter/material.dart';
 import '../../../core/model/discount_model.dart';
 import '../../../core/services/discount_service.dart';
@@ -39,8 +37,7 @@ class DiscountProvider extends ChangeNotifier {
   // ────────────────────────────────────────────
   // بارگذاری تخفیف‌ها از Supabase
   // ────────────────────────────────────────────
-  Future<void> loadDiscounts(String userId) async {
-    // اگه قبلاً لود شده، دوباره لود نکن
+  Future<void> loadDiscounts() async {
     if (_loadState == DiscountLoadState.loaded) return;
 
     _loadState = DiscountLoadState.loading;
@@ -48,7 +45,7 @@ class DiscountProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _discounts = await DiscountService.fetchUserDiscounts(userId);
+      _discounts = await DiscountService.fetchAvailableDiscounts();
       _loadState = DiscountLoadState.loaded;
     } catch (e) {
       _loadState = DiscountLoadState.error;
@@ -59,9 +56,9 @@ class DiscountProvider extends ChangeNotifier {
   }
 
   // ── force reload (برای pull-to-refresh) ──
-  Future<void> reload(String userId) async {
+  Future<void> reload() async {
     _loadState = DiscountLoadState.idle;
-    await loadDiscounts(userId);
+    await loadDiscounts();
   }
 
   // ────────────────────────────────────────────
@@ -70,7 +67,6 @@ class DiscountProvider extends ChangeNotifier {
   Future<void> applyCode({
     required String code,
     required int cartTotal,
-    String? userId,
   }) async {
     if (code.trim().isEmpty) return;
 
@@ -81,7 +77,6 @@ class DiscountProvider extends ChangeNotifier {
     final result = await DiscountService.applyCode(
       code: code,
       cartTotal: cartTotal,
-      userId: userId,
     );
 
     if (result.success) {
@@ -111,33 +106,17 @@ class DiscountProvider extends ChangeNotifier {
   // ────────────────────────────────────────────
   // علامت‌گذاری به‌عنوان استفاده‌شده (بعد از پرداخت)
   // ────────────────────────────────────────────
-  Future<void> markAppliedAsUsed({
-    required String orderId,
-    required String userId,
-  }) async {
+  Future<void> markAppliedAsUsed() async {
     if (_appliedDiscount == null) return;
 
     await DiscountService.markAsUsed(
       discountId: _appliedDiscount!.id,
-      orderId: orderId,
-      userId: userId,
     );
 
     // آپدیت local state
     final index = _discounts.indexWhere((d) => d.id == _appliedDiscount!.id);
     if (index != -1) {
-      _discounts[index] = DiscountModel(
-        id: _discounts[index].id,
-        code: _discounts[index].code,
-        title: _discounts[index].title,
-        description: _discounts[index].description,
-        type: _discounts[index].type,
-        status: DiscountStatus.used, // ← تغییر وضعیت
-        value: _discounts[index].value,
-        expiresAt: _discounts[index].expiresAt,
-        emoji: _discounts[index].emoji,
-        minOrderPrice: _discounts[index].minOrderPrice,
-      );
+      _discounts[index] = _discounts[index].copyWith(status: DiscountStatus.used);
     }
 
     removeDiscount();

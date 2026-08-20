@@ -61,7 +61,12 @@ class _CustomDrawerState extends State<CustomDrawer>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profile = context.watch<ProfileProvider>();
     final themeProvider = context.watch<ThemeProvider>();
-    final user = profile.user;
+    final user = profile.user ?? const UserModel(
+      id: '',
+      firstName: 'مهمان',
+      lastName: '',
+      phone: '',
+    );
 
     return Directionality(
       textDirection: TextDirection.rtl,

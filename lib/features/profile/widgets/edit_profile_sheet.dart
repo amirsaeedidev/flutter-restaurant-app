@@ -22,7 +22,7 @@ class _EditProfileSheetState extends State<EditProfileSheet>
   void initState() {
     super.initState();
     final user = context.read<ProfileProvider>().user;
-    _firstNameCtrl = TextEditingController(text: user.firstName);
+    _firstNameCtrl = TextEditingController(text: user!.firstName);
     _lastNameCtrl = TextEditingController(text: user.lastName);
 
     _animController = AnimationController(

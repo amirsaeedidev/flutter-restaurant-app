@@ -6,16 +6,13 @@ import '../../../core/theme/app_colors.dart';
 import '../providers/discount_provider.dart';
 
 class DiscountScreen extends StatefulWidget {
-  /// userId برای لود کدهای کاربر لازم است.
   /// cartTotal فقط وقتی این صفحه از داخل checkout باز می‌شود معنی دارد؛
   /// برای مرور ساده می‌توانی 0 بفرستی.
   const DiscountScreen({
     super.key,
-    required this.userId,
-    this.cartTotal = 0,
+    this.cartTotal = 0, required String userId,
   });
 
-  final String userId;
   final int cartTotal;
 
   @override
@@ -35,7 +32,8 @@ class _DiscountScreenState extends State<DiscountScreen>
     _tabCtrl = TabController(length: 2, vsync: this);
     // لود تخفیف‌ها بعد از اولین فریم (جلوگیری از notifyListeners حین build)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DiscountProvider>().loadDiscounts(widget.userId);
+      // حذف widget.userId
+      context.read<DiscountProvider>().loadDiscounts();
     });
   }
 
@@ -51,10 +49,10 @@ class _DiscountScreenState extends State<DiscountScreen>
     if (code.isEmpty) return;
 
     final provider = context.read<DiscountProvider>();
+    // حذف widget.userId
     await provider.applyCode(
       code: code,
       cartTotal: widget.cartTotal,
-      userId: widget.userId,
     );
 
     if (!mounted) return;
@@ -79,8 +77,9 @@ class _DiscountScreenState extends State<DiscountScreen>
     }
   }
 
+  // حذف widget.userId
   Future<void> _refresh() =>
-      context.read<DiscountProvider>().reload(widget.userId);
+      context.read<DiscountProvider>().reload();
 
   @override
   Widget build(BuildContext context) {
