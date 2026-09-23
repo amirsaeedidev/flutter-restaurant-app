@@ -53,49 +53,49 @@ class OrdersProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> placeOrder(OrderModel order, List<CartItemModel> cartItems) async {
+  // ثبت سفارش از طریق RPC (Transactional & Secure)
+  Future<bool> placeOrder(OrderModel order, List<CartItemModel> cartItems, String? discountCode) async {
     try {
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) throw Exception("کاربر لاگین نیست");
 
-      // ۱. ثبت سفارش اصلی
-      final orderPayload = order.toJson();
-      orderPayload['user_id'] = userId;
-
-      final orderResponse = await SupabaseService.client
-          .from('orders')
-          .insert(orderPayload)
-          .select()
-          .single();
-
-      final orderId = orderResponse['id'];
-      final newOrder = OrderModel.fromJson(orderResponse);
-
-      // ۲. ثبت آیتم‌های سفارش
+      // مپ کردن آیتم‌های سبد برای ارسال به RPC
       final itemsPayload = cartItems.map((item) => {
-            'order_id': orderId,
             'product_id': item.product.id,
             'quantity': item.quantity,
-            'unit_price': item.product.price,
-            'total_price': item.totalPrice,
           }).toList();
 
-      await SupabaseService.client.from('order_items').insert(itemsPayload);
+      // فراخوانی تابع place_order در دیتابیس
+      final response = await SupabaseService.client.rpc(
+        'place_order',
+        params: {
+          'p_order_type': order.type == OrderType.delivery ? 'delivery' : 'dine_in',
+          'p_items': itemsPayload,
+          'p_address_line': order.address,
+          'p_table_number': order.tableNumber,
+          'p_note': order.note,
+          'p_discount_code': discountCode,
+        },
+      );
 
-      // ۳. اضافه کردن به لیست محلی برای بروزرسانی سریع UI
-      _orders.insert(0, newOrder.copyWith(
-        items: cartItems.map((e) => OrderItemModel(
-          productId: e.product.id,
-          productName: e.product.name,
-          quantity: e.quantity,
-          unitPrice: e.product.price,
-        )).toList(),
-      ));
-      
-      notifyListeners();
+      // پاسخ RPC می‌تواند شامل جزئیات سفارش ثبت شده باشد
+      // فرض می‌کنیم پاسخ ساختار مشابه order را دارد
+      if (response != null) {
+         final newOrder = OrderModel.fromJson(response as Map<String, dynamic>).copyWith(
+           items: cartItems.map((e) => OrderItemModel(
+             productId: e.product.id,
+             productName: e.product.name,
+             quantity: e.quantity,
+             unitPrice: e.product.price,
+           )).toList(),
+         );
+         _orders.insert(0, newOrder);
+         notifyListeners();
+      }
+
       return true;
     } catch (e) {
-      _error = "خطا در ثبت سفارش";
+      _error = "خطا در ثبت سفارش: ${e.toString()}";
       print("Error placing order: $e");
       notifyListeners();
       return false;

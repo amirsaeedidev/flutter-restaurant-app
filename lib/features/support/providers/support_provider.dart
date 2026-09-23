@@ -43,8 +43,8 @@ class SupportProvider extends ChangeNotifier {
     }
   }
 
-  // ایجاد تیکت جدید
-  Future<bool> createTicket(String subject, String message) async {
+  // ایجاد تیکت جدید (با قابلیت ثبت شماره سفارش)
+  Future<bool> createTicket(String subject, String message, String? orderId) async {
     try {
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) return false;
@@ -61,11 +61,16 @@ class SupportProvider extends ChangeNotifier {
 
       final ticketId = ticketResponse['id'];
 
-      // ۲. ثبت اولین پیام
+      // ۲. ثبت اولین پیام (به همراه شماره سفارش در صورت وجود)
+      String fullMessage = message;
+      if (orderId != null && orderId.trim().isNotEmpty) {
+        fullMessage = 'شماره سفارش: $orderId\n\n$message';
+      }
+
       await SupabaseService.client.from('ticket_messages').insert({
         'ticket_id': ticketId,
         'user_id': userId,
-        'message': message,
+        'message': fullMessage,
         'is_admin': false,
       });
 

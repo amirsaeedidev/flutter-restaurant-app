@@ -295,7 +295,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(fontSize: 13, color: Colors.grey[500]),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
+                            ElevatedButton(
                 onPressed: () async {
                   final newOrder = OrderModel(
                     id: '',
@@ -311,9 +311,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     note: widget.orderNote,
                   );
 
-                  final success = await ordersProvider.placeOrder(newOrder, cart.items);
+                  // دریافت کد تخفیف اعمال شده از DiscountProvider
+                  final discountCode = context.read<DiscountProvider>().appliedDiscount?.code;
+
+                  // ارسال کد تخفیف به متد placeOrder
+                  final success = await ordersProvider.placeOrder(newOrder, cart.items, discountCode);
 
                   if (success && context.mounted) {
+                    // علامت زدن تخفیف به عنوان استفاده شده
+                    if (discountCode != null) {
+                      await context.read<DiscountProvider>().markAppliedAsUsed();
+                    }
+                    
                     cart.clearCart();
                     await context.read<LoyaltyProvider>().addPointsForOrder(total);
                     Navigator.pushAndRemoveUntil(
