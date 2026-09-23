@@ -113,130 +113,145 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
       builder: (_) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12.3, sigmaY: 12.3),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  // رنگ بکگراند طبق CSS فرستاده شده
-                  color: isDark
-                      ? const Color.fromRGBO(36, 34, 34, 0.69)
-                      : const Color.fromRGBO(250, 246, 246, 0.5),
-                  border: Border(
-                    top: BorderSide(
+        bool isSubmitting = false; // متغیر برای مدیریت وضعیت دکمه
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12.3, sigmaY: 12.3),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      // رنگ بکگراند طبق CSS فرستاده شده
                       color: isDark
-                          ? const Color.fromRGBO(36, 34, 34, 0.3)
-                          : const Color.fromRGBO(250, 246, 246, 0.3),
-                      width: 1,
+                          ? const Color.fromRGBO(36, 34, 34, 0.69)
+                          : const Color.fromRGBO(250, 246, 246, 0.5),
+                      border: Border(
+                        top: BorderSide(
+                          color: isDark
+                              ? const Color.fromRGBO(36, 34, 34, 0.3)
+                              : const Color.fromRGBO(250, 246, 246, 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 30,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 30,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Form(
-                    key: formKey,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              margin: const EdgeInsets.only(bottom: 24),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white54 : Colors.black54,
-                                borderRadius: BorderRadius.circular(2),
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Form(
+                        key: formKey,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  margin: const EdgeInsets.only(bottom: 24),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white54 : Colors.black54,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          Text(
-                            'ثبت تیکت جدید',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          _GlassFormField(
-                            controller: subjectCtrl,
-                            hint: 'موضوع تیکت',
-                            isDark: isDark,
-                            validator: (v) => v!.isEmpty ? 'موضوع الزامی است' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          _GlassFormField(
-                            controller: orderIdCtrl,
-                            hint: 'شماره سفارش (اختیاری)',
-                            isDark: isDark,
-                          ),
-                          const SizedBox(height: 16),
-                          _GlassFormField(
-                            controller: messageCtrl,
-                            hint: 'متن تیکت',
-                            isDark: isDark,
-                            maxLines: 4,
-                            validator: (v) => v!.isEmpty ? 'متن الزامی است' : null,
-                          ),
-                          const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                if (formKey.currentState!.validate()) {
-                                  final success = await context
-                                      .read<SupportProvider>()
-                                      .createTicket(
-                                        subjectCtrl.text,
-                                        messageCtrl.text,
-                                        orderIdCtrl.text,
-                                      );
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                    if (!success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                            content: Text('خطا در ایجاد تیکت')),
-                                      );
+                              Text(
+                                'ثبت تیکت جدید',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _GlassFormField(
+                                controller: subjectCtrl,
+                                hint: 'موضوع تیکت',
+                                isDark: isDark,
+                                validator: (v) => v!.isEmpty ? 'موضوع الزامی است' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _GlassFormField(
+                                controller: orderIdCtrl,
+                                hint: 'شماره سفارش (اختیاری)',
+                                isDark: isDark,
+                              ),
+                              const SizedBox(height: 16),
+                              _GlassFormField(
+                                controller: messageCtrl,
+                                hint: 'متن تیکت',
+                                isDark: isDark,
+                                maxLines: 4,
+                                validator: (v) => v!.isEmpty ? 'متن الزامی است' : null,
+                              ),
+                              const SizedBox(height: 32),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: isSubmitting ? null : () async {
+                                    if (formKey.currentState!.validate()) {
+                                      setState(() => isSubmitting = true); // شروع لودینگ
+                                      final success = await context
+                                          .read<SupportProvider>()
+                                          .createTicket(
+                                            subjectCtrl.text,
+                                            messageCtrl.text,
+                                            orderIdCtrl.text,
+                                          );
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        if (!success) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                                content: Text('خطا در ایجاد تیکت. لطفا جداول را در ساپابیس بررسی کنید')),
+                                          );
+                                        }
+                                      }
                                     }
-                                  }
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14)),
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                  child: isSubmitting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text('ارسال تیکت',
+                                          style: TextStyle(
+                                              fontSize: 16, fontWeight: FontWeight.w700)),
+                                ),
                               ),
-                              child: const Text('ارسال تیکت',
-                                  style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w700)),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -384,7 +399,12 @@ class _TicketCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                 ),
                 child: Center(
-                  child: Image.asset('assets/images/user_avatar.png', width: 32, height: 32),
+                  // errorBuilder اضافه شد تا اگر عکس پیدا نشد کرش نکند
+                  child: Image.asset(
+                    'assets/images/user_avatar.png', 
+                    width: 32, height: 32,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -927,7 +947,13 @@ class _ContactCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  child: Image.asset(imagePath, width: 24, height: 24),
+                  // errorBuilder اضافه شد تا اگر عکس پیدا نشد کرش نکند
+                  child: Image.asset(
+                    imagePath, 
+                    width: 24, 
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.help_outline, size: 24, color: AppColors.primary),
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
