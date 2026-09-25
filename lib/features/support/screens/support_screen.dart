@@ -401,7 +401,7 @@ class _TicketCard extends StatelessWidget {
                 child: Center(
                   // errorBuilder اضافه شد تا اگر عکس پیدا نشد کرش نکند
                   child: Image.asset(
-                    'assets/images/user_avatar.png', 
+                    'assets/images/ticket.png', 
                     width: 32, height: 32,
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
                   ),

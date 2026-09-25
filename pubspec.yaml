@@ -43,6 +43,7 @@ flutter:
     - assets/images/soda.png
     - assets/images/hamber.png
     - assets/images/massege.png
+    - assets/images/ticket.png
 
   fonts:
     - family: Lalezar
