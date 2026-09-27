@@ -1,0 +1,82 @@
+name: Flutter Build & Release
+
+# این اکشن چه زمان‌هایی اجرا شود؟
+on:
+  push:
+    branches:
+      - main # وقتی به برنچ main پوش می‌کنید
+    tags:
+      - 'v*' # وقتی یک تگ با نسخه (مثل v1.0.0) می‌سازید
+  workflow_dispatch: # امکان اجرای دستی از داخل سایت گیت‌هاب
+
+# متغیرهای محیطی برای دسترسی به ساپابیس
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+jobs:
+  build:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ۱. دانلود سورس کد از گیت‌هاب
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ۲. نصب جاوا (الزامی برای بیلد اندروید)
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # ۳. نصب و راه‌اندازی فلتر
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # ۴. دریافت پکیج‌های پروژه
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ۵. ساخت فایل .env (چون فایل env در گیت‌هاب نیست)
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      # ۶. بیلد گرفتن APK رلیز
+      - name: Build APK
+        run: flutter build apk --release
+
+      # ۷. بیلد گرفتن AAB (برای انتشار در گوگل پلی)
+      - name: Build App Bundle
+        run: flutter build appbundle --release
+
+      # ۸. آپلود فایل APK به بخش Artifacts گیت‌هاب
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      # ۹. آپلود فایل AAB به بخش Artifacts
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/flutter-bundle/app-release.aab
+
+      # ۱۰. ساخت رلیز خودکار در گیت‌هاب (فقط وقتی تگ می‌زنید)
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-bundle/app-release.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
