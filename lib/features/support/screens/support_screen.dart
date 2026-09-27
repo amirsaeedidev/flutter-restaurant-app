@@ -110,7 +110,7 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      
+
       barrierColor: Colors.black54,
       builder: (_) {
         bool isSubmitting = false;
@@ -397,7 +397,7 @@ class _TicketCard extends StatelessWidget {
                 child: Center(
                   // جای عکس پروفایل کاربر
                   child: Image.asset(
-                    'assets/images/user_avatar.png', 
+                    'assets/images/ticket.png', 
                     width: 32, height: 32,
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
                   ),
@@ -737,7 +737,7 @@ class _ContactTab extends StatelessWidget {
                 // جای عکس بنر (آیکون جایگزین می‌شود تا کرش نکند)
                 Image.asset(
                   'assets/images/support_banner.png', 
-                  width: 40, height: 40,
+                  width: 60, height: 60,
                  
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.support_agent_rounded, color: Colors.white, size: 40),
                 ),
@@ -764,6 +764,7 @@ class _ContactTab extends StatelessWidget {
           const SizedBox(height: 20),
           _ContactCard(
             imagePath: 'assets/images/phone.png',
+            
             title: 'تلفن پشتیبانی',
             subtitle: '021 - 1234 - 5678',
             badge: 'شنبه تا پنج‌شنبه ۸ تا ۲۲',
@@ -947,8 +948,8 @@ class _ContactCard extends StatelessWidget {
                   // در صورت پیدا نشدن عکس، آیکون جایگزین می‌شود تا اپ کرش نکند
                   child: Image.asset(
                     imagePath, 
-                    width: 24, 
-                    height: 24,
+                    width: 50, 
+                    height: 50,
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.help_outline, size: 24, color: AppColors.primary),
                   ),
                 ),

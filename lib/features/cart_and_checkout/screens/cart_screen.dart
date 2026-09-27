@@ -139,7 +139,9 @@ class _EmptyCart extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('🛒', style: TextStyle(fontSize: 72)),
+          Image.asset(
+                  'assets/images/EmptyBasket.png', 
+                  width: 210, height: 210,),
           const SizedBox(height: 16),
           Text(
             'سبد خریدت خالیه!',

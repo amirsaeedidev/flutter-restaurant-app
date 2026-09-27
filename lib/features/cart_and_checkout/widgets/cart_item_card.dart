@@ -236,11 +236,10 @@ class _QuantityRow extends StatelessWidget {
 
 class _QBtn extends StatelessWidget {
   const _QBtn({
-    this.color, // این خط اضافه شد تا ارور برطرف شود
     required this.icon,
     required this.onTap,
     required this.isDark,
-    this.isPrimary = false,
+    this.isPrimary = false, this.color,
   });
 
   final Color? color;

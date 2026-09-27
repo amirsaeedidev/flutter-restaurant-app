@@ -42,7 +42,7 @@ class CustomBottomNav extends StatelessWidget {
                   _buildNavItem(
                     context, 
                     index: 0, 
-                    imagePath: 'assets/icons/shopping.png', // عکس سبد خرید
+                    imagePath: 'assets/icons/iconshopping.png', // عکس سبد خرید
                     label: 'سبد خرید', 
                     isDark: isDark, 
                     selectedIndex: selectedIndex,
@@ -50,7 +50,7 @@ class CustomBottomNav extends StatelessWidget {
                   _buildNavItem(
                     context, 
                     index: 1, 
-                    imagePath: 'assets/icons/home.png', // عکس خانه
+                    imagePath: 'assets/icons/iconhome.png', // عکس خانه
                     label: 'خانه', 
                     isDark: isDark, 
                     selectedIndex: selectedIndex,
@@ -58,7 +58,7 @@ class CustomBottomNav extends StatelessWidget {
                   _buildNavItem(
                     context, 
                     index: 2, 
-                    imagePath: 'assets/icons/receipt.png', // عکس سفارشات
+                    imagePath: 'assets/icons/iconreceipt.png', // عکس سفارشات
                     label: 'سفارشات', 
                     isDark: isDark, 
                     selectedIndex: selectedIndex,

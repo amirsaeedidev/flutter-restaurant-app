@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
@@ -44,7 +45,7 @@ class MainWrapper extends StatelessWidget {
   }
 }
 
-// ── NavBar ──
+// ── NavBar (استایل شیشه مات) ──
 class _BottomNav extends StatelessWidget {
   const _BottomNav({required this.isDark});
   final bool isDark;
@@ -53,43 +54,56 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedIndex = context.watch<NavigationProvider>().selectedIndex;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, -5),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            // رنگ پس‌زمینه نیمه‌شفاف برای افکت شیشه مات
+            color: isDark
+                ? Colors.black.withOpacity(0.6)
+                : Colors.white.withOpacity(0.7),
+            border: Border(
+              top: BorderSide(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.05),
+                width: 1,
+              ),
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16.0, vertical: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _NavItem(
-                  index: 0,
-                  icon: Icons.shopping_cart_rounded,
-                  label: 'سبد خرید',
-                  selectedIndex: selectedIndex,
-                  isDark: isDark),
-              _NavItem(
-                  index: 1,
-                  icon: Icons.home_rounded,
-                  label: 'خانه',
-                  selectedIndex: selectedIndex,
-                  isDark: isDark),
-              _NavItem(
-                  index: 2,
-                  icon: Icons.receipt_long_rounded,
-                  label: 'سفارشات',
-                  selectedIndex: selectedIndex,
-                  isDark: isDark),
-            ],
+          child: SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // در حالت RTL: سبد خرید راست، خانه وسط، سفارشات چپ
+                  _NavItem(
+                    index: 0,
+                    imagePath: 'assets/icons/shopping.png', // عکس سبد خرید
+                    label: 'سبد خرید',
+                    selectedIndex: selectedIndex,
+                    isDark: isDark,
+                  ),
+                  _NavItem(
+                    index: 1,
+                    imagePath: 'assets/icons/home.png', // عکس خانه
+                    label: 'خانه',
+                    selectedIndex: selectedIndex,
+                    isDark: isDark,
+                  ),
+                  _NavItem(
+                    index: 2,
+                    imagePath: 'assets/icons/receipt.png', // عکس سفارشات
+                    label: 'سفارشات',
+                    selectedIndex: selectedIndex,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -101,14 +115,14 @@ class _BottomNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.index,
-    required this.icon,
+    required this.imagePath,
     required this.label,
     required this.selectedIndex,
     required this.isDark,
   });
 
   final int index;
-  final IconData icon;
+  final String imagePath;
   final String label;
   final int selectedIndex;
   final bool isDark;
@@ -117,7 +131,6 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = selectedIndex == index;
     // badge فقط برای سبد خرید (index 0)
-    // CartProvider از main.dart provide شده — همیشه در دسترسه
     final cartCount =
         index == 0 ? context.watch<CartProvider>().itemCount : 0;
 
@@ -126,27 +139,43 @@ class _NavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // آیکون + badge
+            // عکس + badge
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  icon,
+                Image.asset(
+                  imagePath,
+                  width: 26,
+                  height: 26,
+                  // رنگ‌آمیزی عکس: اگر فعال بود سفید، اگر غیرفعال بود خاکستری
                   color: isSelected
                       ? Colors.white
                       : (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary),
-                  size: 26,
+                          ? Colors.white54
+                          : Colors.black54),
+                  // در صورتی که عکس پیدا نشد، آیکون جایگزین نشان بده تا کرش نکنه
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.error_outline,
+                    color: isSelected ? Colors.white : Colors.grey,
+                    size: 26,
+                  ),
                 ),
                 if (cartCount > 0 && !isSelected)
                   Positioned(
