@@ -110,6 +110,7 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      
       barrierColor: Colors.black54,
       builder: (_) {
         bool isSubmitting = false;

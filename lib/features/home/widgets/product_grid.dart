@@ -15,14 +15,16 @@ class ProductGrid extends StatelessWidget {
     final products = context.watch<HomeProvider>().filteredProducts;
 
     if (products.isEmpty) {
-      return const SliverFillRemaining(
+      return SliverFillRemaining(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('😔', style: TextStyle(fontSize: 48)),
-              SizedBox(height: 12),
-              Text(
+              Image.asset(
+                  'assets/images/search.png', 
+                  width: 40, height: 40,),
+               SizedBox(height: 12),
+              const Text(
                 'محصولی در این دسته‌بندی نیست',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
