@@ -1,91 +1,138 @@
-name: Flutter Build & Release
+name: Build Flutter APK
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*' # در صورت ایجاد تگ (مثل v1.0.0) اجرا می‌شود
-  workflow_dispatch: # امکان اجرای دستی
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build Flutter APK
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-      # ۱. دانلود سورس کد از گیت‌هاب
-      - name: Checkout repository
-        uses: actions/checkout@v5
+      # 1. دریافت پروژه
+      - name: Checkout
+        uses: actions/checkout@v6
 
-      # ۲. نصب جاوا (الزامی برای بیلد اندروید)
-      - name: Setup Java JDK
+      # 2. Java 17
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: temurin
           java-version: '17'
 
-      # ۳. نصب و راه‌اندازی فلتر
+      # 3. Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
-      # ۴. دریافت پکیج‌های پروژه
-      - name: Install dependencies
+      # 4. نمایش نسخه‌ها برای عیب‌یابی
+      - name: Show versions
+        run: |
+          flutter --version
+          java -version
+          dart --version
+
+      # 5. دریافت پکیج‌ها
+      - name: Flutter Pub Get
         run: flutter pub get
 
-      # ۵. ارتقای خودکار نسخه‌های Gradle و Android SDK
-      - name: Upgrade Gradle & SDK Versions
+      # 6. نصب Android SDK 34
+      - name: Install Android SDK 34
         run: |
-          # ارتقای نسخه Gradle Wrapper به 8.14
-          sed -i 's/gradle-8.10.2/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/gradle-8.11.1/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/gradle-8.12/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
-          
-          # ارتقای compileSdk به 34 برای رفع خطای lStar در پکیج Isar
-          # استفاده از 2>/dev/null || true تا اگر فایل وجود نداشت خطا ندهد
-          sed -i 's/compileSdkVersion 30/compileSdkVersion 34/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/compileSdkVersion 31/compileSdkVersion 34/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/compileSdkVersion 32/compileSdkVersion 34/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/compileSdkVersion 33/compileSdkVersion 34/g' android/app/build.gradle 2>/dev/null || true
-          
-          # برای پروژه‌هایی که از Kotlin DSL (build.gradle.kts) استفاده می‌کنند
-          sed -i 's/compileSdk 30/compileSdk 34/g' android/app/build.gradle.kts 2>/dev/null || true
-          sed -i 's/compileSdk 31/compileSdk 34/g' android/app/build.gradle.kts 2>/dev/null || true
-          sed -i 's/compileSdk 32/compileSdk 34/g' android/app/build.gradle.kts 2>/dev/null || true
-          sed -i 's/compileSdk 33/compileSdk 34/g' android/app/build.gradle.kts 2>/dev/null || true
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      # ۶. بیلد گرفتن APK رلیز
+      # 7. اصلاح compileSdk در پروژه
+      - name: Fix Android compileSdk
+        shell: bash
+        run: |
+          echo "===== BEFORE ====="
+
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -print
+
+          # حالت قدیمی:
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 34/g' {} \;
+
+          # حالت جدید:
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 34/g' {} \;
+
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdk[[:space:]]+[0-9]+/compileSdk 34/g' {} \;
+
+          # اگر پروژه از flutter.compileSdkVersion استفاده می‌کند
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i \
+            's/flutter\.compileSdkVersion/34/g' {} \;
+
+          echo "===== AFTER ====="
+          grep -Rni "compileSdk" android || true
+
+      # 8. اصلاح compileSdk پکیج‌های Pub
+      # این بخش مشکل اصلی isar_flutter_libs را حل می‌کند
+      - name: Fix Pub Packages compileSdk
+        shell: bash
+        run: |
+          PUB_DIR="$HOME/.pub-cache/hosted/pub.dev"
+
+          if [ -d "$PUB_DIR" ]; then
+
+            # compileSdkVersion 30/31/32/33 -> 34
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdkVersion[[:space:]]+(30|31|32|33)/compileSdkVersion 34/g' {} \;
+
+            # compileSdk = 30/31/32/33 -> 34
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdk[[:space:]]*=[[:space:]]*(30|31|32|33)/compileSdk = 34/g' {} \;
+
+            # compileSdk 30/31/32/33 -> 34
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdk[[:space:]]+(30|31|32|33)/compileSdk 34/g' {} \;
+
+            echo "===== PUB PACKAGE COMPILE SDK ====="
+            grep -Rni "compileSdk" "$PUB_DIR" | head -100 || true
+          fi
+
+      # 9. پاکسازی کامل
+      - name: Flutter Clean
+        run: |
+          flutter clean
+          rm -rf build
+          rm -rf android/.gradle
+
+      # 10. دریافت دوباره dependency
+      - name: Flutter Pub Get Again
+        run: flutter pub get
+
+      # 11. ساخت APK فقط
       - name: Build APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: |
+          flutter build apk \
+            --release \
+            --android-skip-build-dependency-validation
 
-      # ۷. بیلد گرفتن AAB (برای انتشار در گوگل پلی)
-      - name: Build App Bundle
-        run: flutter build appbundle --release --android-skip-build-dependency-validation
+      # 12. بررسی فایل خروجی
+      - name: Check APK
+        run: |
+          ls -lh build/app/outputs/flutter-apk/
+          file build/app/outputs/flutter-apk/app-release.apk
 
-      # ۸. آپلود فایل APK به بخش Artifacts گیت‌هاب
-      - name: Upload APK Artifact
+      # 13. قرار دادن APK در Artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v5
         with:
-          name: release-apk
+          name: restaurant-app-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
-      # ۹. آپلود فایل AAB به بخش Artifacts
-      - name: Upload AAB Artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: release-aab
-          path: build/app/outputs/flutter-bundle/app-release.aab
-
-      # ۱۰. ساخت رلیز خودکار در گیت‌هاب (فقط وقتی تگ می‌زنید)
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-bundle/app-release.aab
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error
