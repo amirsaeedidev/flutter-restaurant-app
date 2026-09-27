@@ -18,7 +18,7 @@ class SupportScreen extends StatelessWidget {
 }
 
 class _SupportScreenContent extends StatefulWidget {
-  const _SupportScreenContent(); // خط زرد برطرف شد
+  const _SupportScreenContent();
 
   @override
   State<_SupportScreenContent> createState() => _SupportScreenContentState();
@@ -100,7 +100,6 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
     );
   }
 
-  // پاپ آپ شیشه‌ای مات با انیمیشن نرم
   void _showCreateTicketDialog(BuildContext context, bool isDark) {
     final subjectCtrl = TextEditingController();
     final orderIdCtrl = TextEditingController();
@@ -113,7 +112,7 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
       builder: (_) {
-        bool isSubmitting = false; // متغیر برای مدیریت وضعیت دکمه
+        bool isSubmitting = false;
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
@@ -127,7 +126,6 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      // رنگ بکگراند طبق CSS فرستاده شده
                       color: isDark
                           ? const Color.fromRGBO(36, 34, 34, 0.69)
                           : const Color.fromRGBO(250, 246, 246, 0.5),
@@ -202,7 +200,7 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
                                 child: ElevatedButton(
                                   onPressed: isSubmitting ? null : () async {
                                     if (formKey.currentState!.validate()) {
-                                      setState(() => isSubmitting = true); // شروع لودینگ
+                                      setState(() => isSubmitting = true);
                                       final success = await context
                                           .read<SupportProvider>()
                                           .createTicket(
@@ -258,7 +256,6 @@ class _SupportScreenContentState extends State<_SupportScreenContent>
   }
 }
 
-// ویجت فیلد متنی برای پاپ آپ شیشه‌ای
 class _GlassFormField extends StatelessWidget {
   const _GlassFormField({
     required this.controller,
@@ -298,7 +295,6 @@ class _GlassFormField extends StatelessWidget {
   }
 }
 
-// ── تب تیکت‌ها ──
 class _TicketsTab extends StatelessWidget {
   const _TicketsTab({required this.isDark});
   final bool isDark;
@@ -362,7 +358,6 @@ class _TicketsTab extends StatelessWidget {
   }
 }
 
-// ── کارت تیکت (طراحی پروفایل‌مانند) ──
 class _TicketCard extends StatelessWidget {
   const _TicketCard({required this.ticket, required this.isDark, required this.onTap});
   final TicketModel ticket;
@@ -371,9 +366,9 @@ class _TicketCard extends StatelessWidget {
 
   Color _statusColor() {
     switch (ticket.status) {
-      case TicketStatus.open: return Colors.orange; // در انتظار پاسخ
-      case TicketStatus.answered: return Colors.blue; // پاسخ داده شد
-      case TicketStatus.closed: return Colors.green; // خوانده شد/بسته شد
+      case TicketStatus.open: return Colors.orange;
+      case TicketStatus.answered: return Colors.blue;
+      case TicketStatus.closed: return Colors.green;
     }
   }
 
@@ -399,9 +394,9 @@ class _TicketCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                 ),
                 child: Center(
-                  // errorBuilder اضافه شد تا اگر عکس پیدا نشد کرش نکند
+                  // جای عکس پروفایل کاربر
                   child: Image.asset(
-                    'assets/images/ticket.png', 
+                    'assets/images/user_avatar.png', 
                     width: 32, height: 32,
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
                   ),
@@ -443,7 +438,6 @@ class _TicketCard extends StatelessWidget {
   }
 }
 
-// ── صفحه جزئیات تیکت ──
 class _TicketDetailScreen extends StatefulWidget {
   const _TicketDetailScreen({required this.ticket});
   final TicketModel ticket;
@@ -545,7 +539,6 @@ class _TicketDetailScreenState extends State<_TicketDetailScreen> {
   }
 }
 
-// ── حباب پیام ──
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message, required this.isDark});
   final TicketMessageModel message;
@@ -626,7 +619,6 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// ── فیلد ارسال پیام ──
 class _MessageInput extends StatelessWidget {
   const _MessageInput({
     required this.controller,
@@ -717,7 +709,6 @@ class _MessageInput extends StatelessWidget {
   }
 }
 
-// ── تب تماس با ما (با عکس‌های PNG) ──
 class _ContactTab extends StatelessWidget {
   const _ContactTab({required this.isDark});
   final bool isDark;
@@ -742,7 +733,13 @@ class _ContactTab extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.support_agent_rounded, color: Colors.white, size: 40),
+                // جای عکس بنر (آیکون جایگزین می‌شود تا کرش نکند)
+                Image.asset(
+                  'assets/images/support_banner.png', 
+                  width: 40, height: 40,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.support_agent_rounded, color: Colors.white, size: 40),
+                ),
                 const SizedBox(width: 16),
                 const Expanded(
                   child: Column(
@@ -765,7 +762,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _ContactCard(
-            imagePath: 'assets/images/phone.png',
+            imagePath: 'assets/icons/phone.png',
             title: 'تلفن پشتیبانی',
             subtitle: '021 - 1234 - 5678',
             badge: 'شنبه تا پنج‌شنبه ۸ تا ۲۲',
@@ -775,7 +772,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ContactCard(
-            imagePath: 'assets/images/whatsapp.png',
+            imagePath: 'assets/icons/whatsapp.png',
             title: 'واتساپ',
             subtitle: '09121234567',
             badge: '۲۴ ساعته',
@@ -795,7 +792,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ContactCard(
-            imagePath: 'assets/images/location.png',
+            imagePath: 'assets/icons/location.png',
             title: 'آدرس رستوران',
             subtitle: 'تهران، خیابان ولیعصر، پلاک ۱',
             badge: 'شنبه تا جمعه ۱۲ تا ۲۳',
@@ -900,7 +897,6 @@ class _ContactTab extends StatelessWidget {
   }
 }
 
-// ── کارت راه ارتباطی ──
 class _ContactCard extends StatelessWidget {
   const _ContactCard({
     required this.imagePath,
@@ -947,7 +943,7 @@ class _ContactCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  // errorBuilder اضافه شد تا اگر عکس پیدا نشد کرش نکند
+                  // در صورت پیدا نشدن عکس، آیکون جایگزین می‌شود تا اپ کرش نکند
                   child: Image.asset(
                     imagePath, 
                     width: 24, 
