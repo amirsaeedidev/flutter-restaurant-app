@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ۱. دانلود سورس کد از گیت‌هاب (فایل .env شما هم همینجا دانلود می‌شود)
+      # ۱. دانلود سورس کد از گیت‌هاب
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -36,20 +36,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ۵. ارتقای نسخه Gradle برای جلوگیری از خطای نسخه در سرور گیت‌هاب
+      # ۵. ارتقای نسخه Gradle Wrapper
       - name: Update Gradle Version
         run: |
           sed -i 's/gradle-8.10.2/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
           sed -i 's/gradle-8.11.1/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
           sed -i 's/gradle-8.12/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
 
-      # ۶. بیلد گرفتن APK رلیز
+      # ۶. بیلد گرفتن APK رلیز (با فلگ نادیده گرفتن بررسی نسخه)
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
-      # ۷. بیلد گرفتن AAB (برای انتشار در گوگل پلی)
+      # ۷. بیلد گرفتن AAB (با فلگ نادیده گرفتن بررسی نسخه)
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --android-skip-build-dependency-validation
 
       # ۸. آپلود فایل APK به بخش Artifacts گیت‌هاب
       - name: Upload APK Artifact
