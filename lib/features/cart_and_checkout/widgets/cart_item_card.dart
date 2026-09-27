@@ -243,7 +243,7 @@ class _QBtn extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.isDark,
-    this.isPrimary = false, this.color,
+    this.isPrimary = false,
   });
   final IconData icon;
   final VoidCallback onTap;

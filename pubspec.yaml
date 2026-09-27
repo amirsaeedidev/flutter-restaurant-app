@@ -48,6 +48,12 @@ flutter:
     - assets/images/phone.png
     - assets/images/whatsapp.png
     - assets/images/support_banner.png
+    - assets/images/otpphone.png
+    - assets/images/search.png
+    - assets/images/EmptyBasket.png
+    
+
+
 
  
 

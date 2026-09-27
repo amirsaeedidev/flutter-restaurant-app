@@ -43,7 +43,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _appliedDiscountCode;
   int _discountAmount = 0;
   String? _discountError;
-  bool _isApplyingDiscount = false;
+  final bool _isApplyingDiscount = false;
 
   @override
   void dispose() {
