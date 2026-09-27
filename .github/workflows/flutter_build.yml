@@ -36,18 +36,31 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ۵. ارتقای نسخه Gradle Wrapper
-      - name: Update Gradle Version
+      # ۵. ارتقای خودکار نسخه‌های Gradle و Android SDK برای جلوگیری از خطاها
+      - name: Upgrade Gradle & SDK Versions
         run: |
+          # ارتقای نسخه Gradle Wrapper به 8.14
           sed -i 's/gradle-8.10.2/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
           sed -i 's/gradle-8.11.1/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
           sed -i 's/gradle-8.12/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
+          
+          # ارتقای compileSdk به 34 برای رفع خطای lStar در پکیج Isar
+          sed -i 's/compileSdkVersion 30/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/compileSdkVersion 31/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/compileSdkVersion 32/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/compileSdkVersion 33/compileSdkVersion 34/g' android/app/build.gradle
+          
+          # برای پروژه‌هایی که از Kotlin DSL استفاده می‌کنند
+          sed -i 's/compileSdk 30/compileSdk 34/g' android/app/build.gradle.kts
+          sed -i 's/compileSdk 31/compileSdk 34/g' android/app/build.gradle.kts
+          sed -i 's/compileSdk 32/compileSdk 34/g' android/app/build.gradle.kts
+          sed -i 's/compileSdk 33/compileSdk 34/g' android/app/build.gradle.kts
 
-      # ۶. بیلد گرفتن APK رلیز (با فلگ نادیده گرفتن بررسی نسخه)
+      # ۶. بیلد گرفتن APK رلیز
       - name: Build APK
         run: flutter build apk --release --android-skip-build-dependency-validation
 
-      # ۷. بیلد گرفتن AAB (با فلگ نادیده گرفتن بررسی نسخه)
+      # ۷. بیلد گرفتن AAB (برای انتشار در گوگل پلی)
       - name: Build App Bundle
         run: flutter build appbundle --release --android-skip-build-dependency-validation
 
