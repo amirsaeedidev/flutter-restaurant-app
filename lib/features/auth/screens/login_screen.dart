@@ -83,28 +83,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 16),
                     // ── لوگو ──
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.restaurant_rounded,
-                          size: 32,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
+                     Image.asset(
+                  'assets/images/otpphone.png', 
+                  width: 40, height: 40,),
                     const SizedBox(height: 14),
                     // ── عنوان ──
                     const Text(
