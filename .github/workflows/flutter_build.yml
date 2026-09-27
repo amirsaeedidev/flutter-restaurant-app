@@ -12,55 +12,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. دریافت پروژه
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
 
-      # 2. Java 17
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      # 3. Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # 4. نمایش نسخه‌ها برای عیب‌یابی
-      - name: Show versions
-        run: |
-          flutter --version
-          java -version
-          dart --version
+      - name: Flutter Version
+        run: flutter --version
 
-      # 5. دریافت پکیج‌ها
-      - name: Flutter Pub Get
+      - name: Pub Get
         run: flutter pub get
 
-      # 6. نصب Android SDK 34
-      - name: Install Android SDK 34
-        run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
-
-      # 7. اصلاح compileSdk در پروژه
-      - name: Fix Android compileSdk
+      # Fix Android compileSdk in the Flutter project
+      - name: Fix Project compileSdk
         shell: bash
         run: |
-          echo "===== BEFORE ====="
-
           find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -print
 
-          # حالت قدیمی:
           find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
             -exec sed -i -E \
             's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 34/g' {} \;
 
-          # حالت جدید:
           find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
             -exec sed -i -E \
             's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 34/g' {} \;
@@ -69,67 +51,59 @@ jobs:
             -exec sed -i -E \
             's/compileSdk[[:space:]]+[0-9]+/compileSdk 34/g' {} \;
 
-          # اگر پروژه از flutter.compileSdkVersion استفاده می‌کند
           find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
             -exec sed -i \
             's/flutter\.compileSdkVersion/34/g' {} \;
 
-          echo "===== AFTER ====="
+          echo "===== PROJECT COMPILE SDK ====="
           grep -Rni "compileSdk" android || true
 
-      # 8. اصلاح compileSdk پکیج‌های Pub
-      # این بخش مشکل اصلی isar_flutter_libs را حل می‌کند
-      - name: Fix Pub Packages compileSdk
+      # Fix compileSdk inside Pub packages
+      - name: Fix Pub Packages
         shell: bash
         run: |
           PUB_DIR="$HOME/.pub-cache/hosted/pub.dev"
 
           if [ -d "$PUB_DIR" ]; then
 
-            # compileSdkVersion 30/31/32/33 -> 34
             find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
               -exec sed -i -E \
               's/compileSdkVersion[[:space:]]+(30|31|32|33)/compileSdkVersion 34/g' {} \;
 
-            # compileSdk = 30/31/32/33 -> 34
             find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
               -exec sed -i -E \
               's/compileSdk[[:space:]]*=[[:space:]]*(30|31|32|33)/compileSdk = 34/g' {} \;
 
-            # compileSdk 30/31/32/33 -> 34
             find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
               -exec sed -i -E \
               's/compileSdk[[:space:]]+(30|31|32|33)/compileSdk 34/g' {} \;
 
-            echo "===== PUB PACKAGE COMPILE SDK ====="
-            grep -Rni "compileSdk" "$PUB_DIR" | head -100 || true
+            echo "===== ISAR ====="
+            find "$PUB_DIR" -path "*isar_flutter_libs*" \
+              -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -print -exec grep -n "compileSdk" {} \; || true
           fi
 
-      # 9. پاکسازی کامل
-      - name: Flutter Clean
+      - name: Clean
         run: |
           flutter clean
           rm -rf build
           rm -rf android/.gradle
 
-      # 10. دریافت دوباره dependency
-      - name: Flutter Pub Get Again
+      - name: Pub Get Again
         run: flutter pub get
 
-      # 11. ساخت APK فقط
       - name: Build APK
         run: |
           flutter build apk \
             --release \
             --android-skip-build-dependency-validation
 
-      # 12. بررسی فایل خروجی
       - name: Check APK
         run: |
           ls -lh build/app/outputs/flutter-apk/
           file build/app/outputs/flutter-apk/app-release.apk
 
-      # 13. قرار دادن APK در Artifacts
       - name: Upload APK
         uses: actions/upload-artifact@v5
         with:
