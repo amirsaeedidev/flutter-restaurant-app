@@ -1,18 +1,12 @@
 name: Flutter Build & Release
 
-# این اکشن چه زمان‌هایی اجرا شود؟
 on:
   push:
     branches:
-      - main # وقتی به برنچ main پوش می‌کنید
+      - main
     tags:
-      - 'v*' # وقتی یک تگ با نسخه (مثل v1.0.0) می‌سازید
-  workflow_dispatch: # امکان اجرای دستی از داخل سایت گیت‌هاب
-
-# متغیرهای محیطی برای دسترسی به ساپابیس
-env:
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - 'v*' # در صورت ایجاد تگ (مثل v1.0.0) اجرا می‌شود
+  workflow_dispatch: # امکان اجرای دستی
 
 jobs:
   build:
@@ -20,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ۱. دانلود سورس کد از گیت‌هاب
+      # ۱. دانلود سورس کد از گیت‌هاب (فایل .env شما هم همینجا دانلود می‌شود)
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -42,11 +36,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ۵. ساخت فایل .env (چون فایل env در گیت‌هاب نیست)
-      - name: Create .env file
+      # ۵. ارتقای نسخه Gradle برای جلوگیری از خطای نسخه در سرور گیت‌هاب
+      - name: Update Gradle Version
         run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          sed -i 's/gradle-8.10.2/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i 's/gradle-8.11.1/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i 's/gradle-8.12/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
 
       # ۶. بیلد گرفتن APK رلیز
       - name: Build APK
