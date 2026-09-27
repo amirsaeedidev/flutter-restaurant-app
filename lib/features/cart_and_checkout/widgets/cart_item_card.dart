@@ -33,7 +33,7 @@ class CartItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -72,9 +72,7 @@ class CartItemCard extends StatelessWidget {
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           height: 1.4,
-                          color: isDark
-                              ? AppColors.darkText
-                              : AppColors.lightText,
+                          color: isDark ? AppColors.darkText : AppColors.lightText,
                         ),
                       ),
                     ),
@@ -86,7 +84,7 @@ class CartItemCard extends StatelessWidget {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
+                          color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -226,7 +224,6 @@ class _QuantityRow extends StatelessWidget {
         ),
         // ── دکمه افزایش (همیشه فعال) ──
         _QBtn(
-          
           icon: Icons.add_rounded,
           onTap: onIncrement,
           isDark: isDark,
@@ -239,27 +236,28 @@ class _QuantityRow extends StatelessWidget {
 
 class _QBtn extends StatelessWidget {
   const _QBtn({
-    
+    this.color, // این خط اضافه شد تا ارور برطرف شود
     required this.icon,
     required this.onTap,
     required this.isDark,
     this.isPrimary = false,
   });
+
+  final Color? color;
   final IconData icon;
   final VoidCallback onTap;
   final bool isDark;
   final bool isPrimary;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     // ── رنگ پس‌زمینه (ایمن‌ترین حالت) ──
     final bg = isPrimary
         ? AppColors.primary
-        : (color?.withValues(alpha: 0.1) ??
-              (isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.06)));
+        : (color?.withOpacity(0.1) ??
+            (isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.06)));
 
     // ── رنگ آیکون ──
     final iconColor = isPrimary
