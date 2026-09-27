@@ -765,7 +765,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _ContactCard(
-            imagePath: 'assets/icons/phone.png',
+            imagePath: 'assets/images/phone.png',
             title: 'تلفن پشتیبانی',
             subtitle: '021 - 1234 - 5678',
             badge: 'شنبه تا پنج‌شنبه ۸ تا ۲۲',
@@ -775,7 +775,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ContactCard(
-            imagePath: 'assets/icons/whatsapp.png',
+            imagePath: 'assets/images/whatsapp.png',
             title: 'واتساپ',
             subtitle: '09121234567',
             badge: '۲۴ ساعته',
@@ -795,7 +795,7 @@ class _ContactTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ContactCard(
-            imagePath: 'assets/icons/location.png',
+            imagePath: 'assets/images/location.png',
             title: 'آدرس رستوران',
             subtitle: 'تهران، خیابان ولیعصر، پلاک ۱',
             badge: 'شنبه تا جمعه ۱۲ تا ۲۳',

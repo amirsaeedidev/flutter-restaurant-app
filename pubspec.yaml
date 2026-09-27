@@ -44,6 +44,11 @@ flutter:
     - assets/images/hamber.png
     - assets/images/massege.png
     - assets/images/ticket.png
+    - assets/images/location.png
+    - assets/images/phone.png
+    - assets/images/whatsapp.png
+
+ 
 
   fonts:
     - family: Lalezar
