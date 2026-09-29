@@ -737,7 +737,7 @@ class _ContactTab extends StatelessWidget {
                 // جای عکس بنر (آیکون جایگزین می‌شود تا کرش نکند)
                 Image.asset(
                   'assets/images/support_banner.png', 
-                  width: 60, height: 60,
+                  width: 70, height: 70,
                  
                   errorBuilder: (context, error, stackTrace) => const Icon(Icons.support_agent_rounded, color: Colors.white, size: 40),
                 ),

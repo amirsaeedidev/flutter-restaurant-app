@@ -141,7 +141,7 @@ class _EmptyCart extends StatelessWidget {
         children: [
           Image.asset(
                   'assets/images/EmptyBasket.png', 
-                  width: 210, height: 210,),
+                  width: 300, height: 300,),
           const SizedBox(height: 16),
           Text(
             'سبد خریدت خالیه!',

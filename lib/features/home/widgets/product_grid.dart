@@ -22,7 +22,7 @@ class ProductGrid extends StatelessWidget {
             children: [
               Image.asset(
                   'assets/images/search.png', 
-                  width: 40, height: 40,),
+                  width: 300, height: 300,),
                SizedBox(height: 12),
               const Text(
                 'محصولی در این دسته‌بندی نیست',

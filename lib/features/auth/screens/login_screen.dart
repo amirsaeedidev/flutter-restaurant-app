@@ -81,12 +81,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 16),
+                    
                     // ── لوگو ──
                      Image.asset(
                   'assets/images/otpphone.png', 
-                  width: 40, height: 40,),
-                    const SizedBox(height: 14),
+                  width: 50, height: 50,),
+                    
                     // ── عنوان ──
                     const Text(
                       'ورود به رستوران',
