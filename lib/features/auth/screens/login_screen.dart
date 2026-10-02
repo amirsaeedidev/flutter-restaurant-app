@@ -63,55 +63,173 @@ class _LoginScreenState extends State<LoginScreen> {
               // بخش بالایی — گرادیانت + لوگو + متن
               // ══════════════════════════════════════════
               Container(
-                height: topSectionHeight,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.85),
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(36),
-                    bottomRight: Radius.circular(36),
-                  ),
+  height: topSectionHeight,
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        AppColors.primary,
+        AppColors.primary.withValues(alpha: 0.85),
+      ],
+    ),
+    borderRadius: const BorderRadius.only(
+      bottomLeft: Radius.circular(36),
+      bottomRight: Radius.circular(36),
+    ),
+  ),
+  child: Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ── لوگو + Glow + انیمیشن ──
+        SizedBox(
+          height: 205,
+          width: double.infinity,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(
+              begin: 0.72,
+              end: 1.0,
+            ),
+            duration: const Duration(
+              milliseconds: 850,
+            ),
+            curve: Curves.easeOutBack,
+            builder: (context, scale, child) {
+              return TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                  begin: 0.0,
+                  end: 1.0,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    
-                    // ── لوگو ──
-                     Image.asset(
-                  'assets/images/otpphone.png', 
-                  width: 50, height: 50,),
-                    
-                    // ── عنوان ──
-                    const Text(
-                      'ورود به رستوران',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
+                duration: const Duration(
+                  milliseconds: 650,
+                ),
+                curve: Curves.easeOutCubic,
+                builder: (context, opacity, child) {
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: 35.0,
+                      end: 0.0,
                     ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: Text(
-                        'شماره موبایلت رو وارد کن، کد تأیید برات میفرستیم',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.7,
-                          color: Colors.white.withValues(alpha: 0.85),
+                    duration: const Duration(
+                      milliseconds: 850,
+                    ),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, translateY, child) {
+                      return Opacity(
+                        opacity: opacity,
+                        child: Transform.translate(
+                          offset: Offset(0, translateY),
+                          child: Transform.scale(
+                            scale: scale,
+                            child: child,
+                          ),
                         ),
+                      );
+                    },
+                    child: Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          // ── Glow پشت عکس ──
+                          Container(
+                            width: 230,
+                            height: 170,
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(100),
+                              gradient: RadialGradient(
+                                colors: [
+                                  (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.black
+                                      : Colors.white)
+                                      .withValues(alpha: 0.45),
+                                  (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.black
+                                      : Colors.white)
+                                      .withValues(alpha: 0.20),
+                                  Colors.transparent,
+                                ],
+                                stops: const [
+                                  0.0,
+                                  0.45,
+                                  1.0,
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      (Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.black
+                                          : Colors.white)
+                                          .withValues(
+                                            alpha: 0.38,
+                                          ),
+                                  blurRadius: 35,
+                                  spreadRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ── عکس PNG ──
+                          Image.asset(
+                            'assets/images/otpphone.png',
+                            width: 300,
+                            height: 300,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+
+        // ── فاصله کنترل‌شده ──
+        const SizedBox(height: 2),
+
+        // ── عنوان ──
+        const Text(
+          'ورود به رستوران',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // ── توضیحات ──
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+          ),
+          child: Text(
+            'شماره موبایلت رو وارد کن، کد تأیید برات میفرستیم',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.7,
+              color: Colors.white.withValues(
+                alpha: 0.85,
               ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
 
               // ══════════════════════════════════════════
               // بخش پایینی — کارت فرم
