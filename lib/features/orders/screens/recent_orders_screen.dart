@@ -55,8 +55,8 @@ class _Body extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: isDark
-                      ? Colors.black.withValues(alpha:0.3)
-                      : Colors.black.withValues(alpha:0.05),
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -97,8 +97,8 @@ class _Body extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: isDark
-                          ? Colors.black.withValues(alpha:0.2)
-                          : Colors.black.withValues(alpha: 0.04),
+                          ? Colors.black.withOpacity(0.2)
+                          : Colors.black.withOpacity(0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -112,8 +112,8 @@ class _Body extends StatelessWidget {
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
                     color: isDark
-                        ? primaryColor.withValues(alpha:0.15)
-                        : primaryColor.withValues(alpha:0.1),
+                        ? primaryColor.withOpacity(0.15)
+                        : primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   labelStyle: const TextStyle(
@@ -164,7 +164,7 @@ class _Body extends StatelessWidget {
             // ── تب سفارشات فعال ──
             _OrderList(
               orders: provider.activeOrders,
-              emptyEmoji: '🍽️',
+              emptyImagePath: 'assets/images/active_order.png', // جایگزینی ایموجی با عکس
               emptyTitle: 'سفارش فعالی نداری',
               emptySubtitle: 'یه نگاه به منو بنداز و خوشمزه‌ترین غذا رو انتخاب کن 😋',
               isDark: isDark,
@@ -175,7 +175,7 @@ class _Body extends StatelessWidget {
             // ── تب تاریخچه ──
             _OrderList(
               orders: provider.historyOrders,
-              emptyEmoji: '📋',
+              emptyImagePath: 'assets/images/history.png', // جایگزینی ایموجی با عکس
               emptyTitle: 'هنوز سفارشی نداری',
               emptySubtitle: 'اولین تجربه غذایی خوشمزه رو همین الان شروع کن!',
               isDark: isDark,
@@ -193,7 +193,7 @@ class _Body extends StatelessWidget {
 class _OrderList extends StatelessWidget {
   const _OrderList({
     required this.orders,
-    required this.emptyEmoji,
+    required this.emptyImagePath,
     required this.emptyTitle,
     required this.emptySubtitle,
     required this.isDark,
@@ -203,7 +203,7 @@ class _OrderList extends StatelessWidget {
   });
 
   final List orders;
-  final String emptyEmoji;
+  final String emptyImagePath;
   final String emptyTitle;
   final String emptySubtitle;
   final bool isDark;
@@ -225,8 +225,8 @@ class _OrderList extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: isDark
-                      ? Colors.black.withValues(alpha:0.3)
-                      : Colors.black.withValues(alpha:0.03),
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.03),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -235,18 +235,26 @@ class _OrderList extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // افکت نرم برای ایموجی
+                // افکت نرم برای عکس
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withValues(alpha:0.05)
-                        : AppColors.primary.withValues(alpha:0.08),
+                        ? Colors.white.withOpacity(0.05)
+                        : AppColors.primary.withOpacity(0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Text(
-                    emptyEmoji,
-                    style: const TextStyle(fontSize: 50),
+                  // ویجت عکس جایگزین ایموجی شد
+                  child: Image.asset(
+                    emptyImagePath,
+                    width: 50,
+                    height: 50,
+                    // در صورت پیدا نشدن عکس، این آیکون نشان داده می‌شود تا اپ کرش نکند
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.receipt_long_rounded,
+                      size: 50,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
