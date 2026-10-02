@@ -164,7 +164,7 @@ class _Body extends StatelessWidget {
             // ── تب سفارشات فعال ──
             _OrderList(
               orders: provider.activeOrders,
-              emptyImagePath: 'assets/images/active_order.png', // جایگزینی ایموجی با عکس
+              emptyImagePath: 'assets/images/avtive_order.png', // جایگزینی ایموجی با عکس
               emptyTitle: 'سفارش فعالی نداری',
               emptySubtitle: 'یه نگاه به منو بنداز و خوشمزه‌ترین غذا رو انتخاب کن 😋',
               isDark: isDark,
