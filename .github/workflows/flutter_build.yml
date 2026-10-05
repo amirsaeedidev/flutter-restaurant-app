@@ -1,77 +1,112 @@
-name: Flutter Build & Release
+name: Build Flutter APK
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*' # در صورت ایجاد تگ (مثل v1.0.0) اجرا می‌شود
-  workflow_dispatch: # امکان اجرای دستی
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build Flutter APK
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-      # ۱. دانلود سورس کد از گیت‌هاب (فایل .env شما هم همینجا دانلود می‌شود)
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      # ۲. نصب جاوا (الزامی برای بیلد اندروید)
-      - name: Setup Java JDK
-        uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: temurin
           java-version: '17'
 
-      # ۳. نصب و راه‌اندازی فلتر
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
-      # ۴. دریافت پکیج‌های پروژه
-      - name: Install dependencies
+      - name: Flutter Version
+        run: flutter --version
+
+      - name: Pub Get
         run: flutter pub get
 
-      # ۵. ارتقای نسخه Gradle برای جلوگیری از خطای نسخه در سرور گیت‌هاب
-      - name: Update Gradle Version
+      # Fix Android compileSdk in the Flutter project
+      - name: Fix Project compileSdk
+        shell: bash
         run: |
-          sed -i 's/gradle-8.10.2/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/gradle-8.11.1/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/gradle-8.12/gradle-8.14/g' android/gradle/wrapper/gradle-wrapper.properties
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) -print
 
-      # ۶. بیلد گرفتن APK رلیز
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 34/g' {} \;
+
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 34/g' {} \;
+
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i -E \
+            's/compileSdk[[:space:]]+[0-9]+/compileSdk 34/g' {} \;
+
+          find android -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -exec sed -i \
+            's/flutter\.compileSdkVersion/34/g' {} \;
+
+          echo "===== PROJECT COMPILE SDK ====="
+          grep -Rni "compileSdk" android || true
+
+      # Fix compileSdk inside Pub packages
+      - name: Fix Pub Packages
+        shell: bash
+        run: |
+          PUB_DIR="$HOME/.pub-cache/hosted/pub.dev"
+
+          if [ -d "$PUB_DIR" ]; then
+
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdkVersion[[:space:]]+(30|31|32|33)/compileSdkVersion 34/g' {} \;
+
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdk[[:space:]]*=[[:space:]]*(30|31|32|33)/compileSdk = 34/g' {} \;
+
+            find "$PUB_DIR" -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -exec sed -i -E \
+              's/compileSdk[[:space:]]+(30|31|32|33)/compileSdk 34/g' {} \;
+
+            echo "===== ISAR ====="
+            find "$PUB_DIR" -path "*isar_flutter_libs*" \
+              -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+              -print -exec grep -n "compileSdk" {} \; || true
+          fi
+
+      - name: Clean
+        run: |
+          flutter clean
+          rm -rf build
+          rm -rf android/.gradle
+
+      - name: Pub Get Again
+        run: flutter pub get
+
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk \
+            --release \
+            --android-skip-build-dependency-validation
 
-      # ۷. بیلد گرفتن AAB (برای انتشار در گوگل پلی)
-      - name: Build App Bundle
-        run: flutter build appbundle --release
+      - name: Check APK
+        run: |
+          ls -lh build/app/outputs/flutter-apk/
+          file build/app/outputs/flutter-apk/app-release.apk
 
-      # ۸. آپلود فایل APK به بخش Artifacts گیت‌هاب
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v5
         with:
-          name: release-apk
+          name: restaurant-app-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
-      # ۹. آپلود فایل AAB به بخش Artifacts
-      - name: Upload AAB Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-aab
-          path: build/app/outputs/flutter-bundle/app-release.aab
-
-      # ۱۰. ساخت رلیز خودکار در گیت‌هاب (فقط وقتی تگ می‌زنید)
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-bundle/app-release.aab
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error
