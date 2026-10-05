@@ -103,7 +103,7 @@ class CustomBottomNav extends StatelessWidget {
                     context,
                     index: 0,
                     imagePath:
-                        'assets/images/EmptyBasket.png',
+                        'assets/images/iconshopping.png',
                     label: 'سبد خرید',
                     isDark: isDark,
                     selectedIndex: selectedIndex,
