@@ -1,30 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../model/banner_model.dart';
-import '../services/supabase_service.dart';
+import 'supabase_service.dart';
 
 class BannerService {
-  static final _client = SupabaseService.client;
+  static final SupabaseClient _client = SupabaseService.client;
 
   static Future<List<BannerModel>> getBanners() async {
     try {
-      final res = await _client
+      final response = await _client
           .from('banners')
-          .select('id, title, image_url, sort_order')
+          .select('id, title, subtitle, promo_title, discount_code, logo_url, image_url, sort_order')
           .eq('is_active', true)
-          .order('sort_order');
+          .order('sort_order', ascending: true);
 
-      return (res as List)
-          .map((row) => BannerModel(
-                id: row['id'] as String,
-                title: row['title'] as String,
-                imageUrl: row['image_url'] as String? ?? '',
-                sortOrder: row['sort_order'] as int? ?? 0,
-              ))
-          .toList();
-    } on PostgrestException catch (e) {
-      throw Exception('خطا در دریافت بنرها: ${e.message}');
-    } catch (e) {
-      throw Exception('خطای غیرمنتظره: $e');
+      return (response as List)
+          .map((row) => BannerModel.fromJson(row as Map<String, dynamic>))
+          .toList(growable: false);
+    } on PostgrestException catch (error) {
+      throw Exception('خطا در دریافت بنرها: ${error.message}');
+    } catch (error) {
+      throw Exception('خطای غیرمنتظره در دریافت بنرها: $error');
     }
   }
 }

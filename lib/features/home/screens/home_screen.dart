@@ -5,6 +5,8 @@ import '../providers/home_provider.dart';
 import '../widgets/category_tabs.dart';
 import '../widgets/product_grid.dart';
 import 'dart:ui';
+import 'package:flutter/services.dart';
+import '../../notifications/screens/notifications_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -80,10 +82,8 @@ class _HomeViewState extends State<_HomeView> with TickerProviderStateMixin {
     final provider = context.watch<HomeProvider>();
 
     // ── Loading ──
-    if (provider.loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+    if (provider.loading && provider.categories.isEmpty && provider.banners.isEmpty) {
+      return _HomeSkeleton(isDark: isDark);
     }
 
     // ── Error ──
@@ -217,7 +217,7 @@ class _HomeViewState extends State<_HomeView> with TickerProviderStateMixin {
                       padding: const EdgeInsets.only(left: 8),
                       child: GestureDetector(
                         onTap: () {
-                          // TODO: عملکرد نوتیفیکیشن
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
                         },
                         child: Container(
                           width: 36,
@@ -239,7 +239,7 @@ class _HomeViewState extends State<_HomeView> with TickerProviderStateMixin {
           ),
 
           // ── بنر تبلیغاتی با انیمیشن Fade + Scale ──
-          if (!_showSearch)
+          if (!_showSearch && provider.banners.isNotEmpty)
             SliverToBoxAdapter(
               child: FadeTransition(
                 opacity: _bannerOpacityAnimation,
@@ -335,125 +335,77 @@ class _PromoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final banners = context.watch<HomeProvider>().banners;
+    if (banners.isEmpty) return const SizedBox.shrink();
+    final banner = banners.first;
+    final imageUrl = banner.imageUrl.trim();
+    final logoUrl = banner.logoUrl?.trim() ?? '';
+    final headline = (banner.promoTitle ?? '').trim();
+    final subtitle = (banner.subtitle ?? '').trim();
+    final code = (banner.discountCode ?? '').trim();
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       height: 180,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 2,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        image: const DecorationImage(
-          image: AssetImage('assets/images/baner.png'),
-          fit: BoxFit.cover,
-        ),
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 18, offset: const Offset(0, 8))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            Container(
-              color: Colors.black.withValues(alpha: 0.10),
-            ),
+            if (imageUrl.isEmpty)
+              Image.asset('assets/images/baner.png', fit: BoxFit.cover)
+            else
+              Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset('assets/images/baner.png', fit: BoxFit.cover)),
+            const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.centerRight, end: Alignment.centerLeft, colors: [Color(0xD9000000), Color(0x45000000), Color(0x10000000)]))),
             Positioned(
-              left: -40,
-              top: -30,
+              right: 12, top: 12, bottom: 12,
               child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.orange.withValues(alpha: 0.18),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-                  child: const SizedBox(),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 12,
-              top: 12,
-              bottom: 12,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 2),
-                  child: Container(
-                    width: 150,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 20,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '🎉 پیشنهاد ویژه',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          '۲۰٪ تخفیف\nاولین سفارش',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            height: 1.2,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        _PromoCode(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 10,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.orange.withValues(alpha: 0.35),
-                        blurRadius: 30,
-                        spreadRadius: 5,
+                width: 170,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.17), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(banner.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                  if (headline.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(headline, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.15)),
+                  ],
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                  ],
+                  if (code.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(9),
+                      onTap: () async {
+                        await Clipboard.setData(ClipboardData(text: code));
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('کد تخفیف کپی شد'), behavior: SnackBarBehavior.floating));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(9)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.copy_rounded, size: 13, color: AppColors.primary),
+                          const SizedBox(width: 5),
+                          Flexible(child: Text(code, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w900))),
+                        ]),
                       ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    'assets/images/soda.png',
-                    scale: 22,
-                  ),
-                ),
+                    ),
+                  ],
+                ]),
               ),
             ),
+            if (logoUrl.isNotEmpty)
+              Positioned(left: 12, top: 12, child: Container(
+                width: 58, height: 58, padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(16)),
+                child: Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.restaurant_rounded, color: AppColors.primary)),
+              )),
           ],
         ),
       ),
@@ -461,29 +413,37 @@ class _PromoBanner extends StatelessWidget {
   }
 }
 
-class _PromoCode extends StatelessWidget {
-  const _PromoCode();
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton({required this.isDark});
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white38),
-      ),
-      child: const Text('کد: FIRST20',
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5)),
+    final shade = isDark ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.055);
+    Widget block(double height, {double? width}) => Container(height: height, width: width, decoration: BoxDecoration(color: shade, borderRadius: BorderRadius.circular(16)));
+    return Scaffold(
+      body: SafeArea(child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [block(44, width: 44), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [block(16, width: 160), const SizedBox(height: 8), block(10, width: 110)])), block(40, width: 40)]),
+          const SizedBox(height: 20),
+          block(180),
+          const SizedBox(height: 18),
+          Row(children: [Expanded(child: block(42)), const SizedBox(width: 10), Expanded(child: block(42)), const SizedBox(width: 10), Expanded(child: block(42))]),
+          const SizedBox(height: 18),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 4,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: 0.72),
+            itemBuilder: (_, __) => Column(children: [Expanded(child: block(150)), const SizedBox(height: 10), block(14), const SizedBox(height: 8), block(12, width: 110)]),
+          ),
+        ]),
+      )),
     );
   }
 }
 
-// ── Sticky تب‌ها ──
 class _StickyTabsDelegate extends SliverPersistentHeaderDelegate {
   const _StickyTabsDelegate({required this.isDark});
   final bool isDark;
