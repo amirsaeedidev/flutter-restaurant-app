@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/model/order_model.dart';
 import '../../../core/model/cart_item_model.dart';
 import '../../../core/services/supabase_service.dart';
@@ -7,6 +10,9 @@ class OrdersProvider extends ChangeNotifier {
   List<OrderModel> _orders = [];
   bool _isLoading = false;
   String? _error;
+  RealtimeChannel? _ordersChannel;
+  String? _subscribedUserId;
+  bool _disposed = false;
 
   List<OrderModel> get orders => List.unmodifiable(_orders);
   bool get isLoading => _isLoading;
@@ -20,6 +26,22 @@ class OrdersProvider extends ChangeNotifier {
       .where((o) => o.status == OrderStatus.delivered || o.status == OrderStatus.cancelled)
       .toList();
 
+  void _subscribeToOrders(String userId) {
+    if (_subscribedUserId == userId && _ordersChannel != null) return;
+    final previous = _ordersChannel;
+    if (previous != null) unawaited(SupabaseService.client.removeChannel(previous));
+    _subscribedUserId = userId;
+    _ordersChannel = SupabaseService.client.channel('customer-orders-$userId')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'orders',
+        filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'user_id', value: userId),
+        callback: (_) { if (!_disposed) unawaited(fetchOrders()); },
+      )
+      ..subscribe();
+  }
+
   Future<void> fetchOrders() async {
     _isLoading = true;
     _error = null;
@@ -28,6 +50,7 @@ class OrdersProvider extends ChangeNotifier {
     try {
       final userId = SupabaseService.client.auth.currentUser?.id;
       if (userId == null) throw Exception("کاربر لاگین نیست");
+      _subscribeToOrders(userId);
 
       final response = await SupabaseService.client
           .from('orders')
@@ -100,5 +123,12 @@ class OrdersProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+  @override
+  void dispose() {
+    _disposed = true;
+    final channel = _ordersChannel;
+    if (channel != null) unawaited(SupabaseService.client.removeChannel(channel));
+    super.dispose();
   }
 }
